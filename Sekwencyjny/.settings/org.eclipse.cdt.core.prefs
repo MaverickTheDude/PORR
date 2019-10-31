@@ -1,0 +1,11 @@
+eclipse.preferences.version=1
+environment/project/cdt.managedbuild.config.gnu.mingw.exe.debug.715244711/PROJ_LOC/delimiter=;
+environment/project/cdt.managedbuild.config.gnu.mingw.exe.debug.715244711/PROJ_LOC/operation=append
+environment/project/cdt.managedbuild.config.gnu.mingw.exe.debug.715244711/PROJ_LOC/value=${ProjDirPath}
+environment/project/cdt.managedbuild.config.gnu.mingw.exe.debug.715244711/append=true
+environment/project/cdt.managedbuild.config.gnu.mingw.exe.debug.715244711/appendContributed=true
+environment/project/cdt.managedbuild.config.gnu.mingw.exe.release.1172405132/PROJ_LOC/delimiter=;
+environment/project/cdt.managedbuild.config.gnu.mingw.exe.release.1172405132/PROJ_LOC/operation=append
+environment/project/cdt.managedbuild.config.gnu.mingw.exe.release.1172405132/PROJ_LOC/value=${ProjDirPath}
+environment/project/cdt.managedbuild.config.gnu.mingw.exe.release.1172405132/append=true
+environment/project/cdt.managedbuild.config.gnu.mingw.exe.release.1172405132/appendContributed=true
