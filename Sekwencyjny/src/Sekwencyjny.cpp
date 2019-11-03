@@ -8,33 +8,60 @@
 
 #include <iostream>
 #include <Eigen>
+#include "PORR.h"
 using namespace std;
 using namespace Eigen;
 
 int main() {
 
-	  Vector3d v(1,2,3);
-	  Vector3d w(0,1,2);
+	int Nbodies = 2;
+	VectorXd z0(Nbodies), p0(Nbodies);
+	z0 << 0, 1;
+	p0 << 1, 0;
+	inputClass input(Nbodies, z0, p0);
+	//input.print();
+	cout << endl << input.stop << endl;
+	solution sol = RK_solver(input);
 
-	  cout << "Dot product: " << v.dot(w) << endl;
-	  double dp = v.adjoint()*w; // automatic conversion of the inner product to a scalar
-	  cout << "Dot product via a matrix product: " << dp << endl;
-	  cout << "Cross product:\n" << v.cross(w) << endl;
+	if (sol.stopped) {
+		cout << " PROBLEM!" << endl << sol.error_messege << endl;
+		return 1;
+	}
 
-	  cout << "Here is the matrix A:\n" << v.adjoint() << endl;
-
-	  std::cout << "\n\n" << std::endl;
-
+	cout << sol.T << endl;
+	return 0;
 
 
-	  std::cout << "\n\n" << std::endl;
+	//	double m = 0.4, L = 1;
+	//	DiagonalMatrix<double, 3> M(m, m, m*L*L/12);
+	//	Matrix3d S;
+	//	S << 1, 0, 0, 0, 1, 0, m, L, 1;
+	//	Matrix3d M1;
+	//	M1 = S.transpose() * M * S;
+	//	cout << M1 << endl;
 
-	   Matrix2f A, b;
-	   A << 2, -1, -1, 3;
-	   b << 1, 2, 3, 1;
-	   cout << "Here is the matrix A:\n" << A << endl;
-	   cout << "Here is the right hand side b:\n" << b << endl;
-	   Matrix2f x = A.ldlt().solve(b);
-	   cout << "The solution is:\n" << x << endl;
-	   return 0;
+	Vector3d v(1,2,3);
+	Vector3d w(0,1,2);
+
+	cout << "Dot product: " << v.dot(w) << endl;
+	double dp = v.adjoint()*w; // automatic conversion of the inner product to a scalar
+	cout << "Dot product via a matrix product: " << dp << endl;
+	cout << "Cross product:\n" << v.cross(w) << endl;
+
+	cout << "Here is the matrix A:\n" << v.adjoint() << endl;
+
+	std::cout << "\n\n" << std::endl;
+
+
+
+	std::cout << "\n\n" << std::endl;
+
+	Matrix2f A, b;
+	A << 2, -1, -1, 3;
+	b << 1, 2, 3, 1;
+	cout << "Here is the matrix A:\n" << A << endl;
+	cout << "Here is the right hand side b:\n" << b << endl;
+	Matrix2f x = A.ldlt().solve(b);
+	cout << "The solution is:\n" << x << endl;
+	return 0;
 }
