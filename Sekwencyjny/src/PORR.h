@@ -6,8 +6,9 @@
 #define PORR_H_
 
 #include <iostream>
-#include <Eigen>
+#include <Eigen/Dense>
 using namespace Eigen;
+const double PI = 4*atan(1);
 
 class body {
 	friend class inputClass;
@@ -28,14 +29,14 @@ class inputClass {
 	const double m = 0.4;
 	const double dt = 0.02;
 	const double Tk = 1.0;
-	const VectorXd z0;
-	const VectorXd p0;
 	body body1 = body(1, L, m);
 
 public:
+	const VectorXd p0;
+	const VectorXd q0;
 	bool stop = false;
 
-	inputClass(const int e_Nbodies, VectorXd e_z0, VectorXd e_p0);
+	inputClass(const int e_Nbodies, VectorXd e_p0, VectorXd e_q0);
 	double getTk();
 	double getdt();
 	void print();
@@ -48,11 +49,13 @@ struct solution {
 	std::string error_messege;
 	bool stopped;
 
-	solution(VectorXd e_T, MatrixXd e_pTab, MatrixXd e_qTab);
+	solution(VectorXd &e_T, MatrixXd &e_pTab, MatrixXd &e_qTab);
 	solution(std::string e_error_msg);
 };
 
 solution RK_solver(inputClass &input);
+
+VectorXd RHS(double t, VectorXd Y, inputClass &input);
 
 
 #endif /* PORR_H_ */

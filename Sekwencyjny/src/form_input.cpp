@@ -1,8 +1,10 @@
 #include <iostream>
-#include <Eigen>
+#include <Eigen/Dense>
 #include "PORR.h"
 using namespace Eigen;
-using namespace std;
+using std::cout;
+using std::endl;
+
 
 body::body(int e_id, double e_L, double e_m)
 : id(e_id), L(e_L), m(e_m), sC1(-L/2,0),
@@ -20,9 +22,9 @@ void body::print() {
 }
 
 
-inputClass::inputClass(const int e_Nbodies, VectorXd e_z0, VectorXd e_p0)
- : Nbodies(e_Nbodies), z0(e_z0), p0(e_p0) {
-	if (e_z0.rows() != e_Nbodies || e_p0.rows() != e_Nbodies)
+inputClass::inputClass(const int e_Nbodies, VectorXd e_p0, VectorXd e_q0)
+ : Nbodies(e_Nbodies), p0(e_p0), q0(e_q0) {
+	if (e_q0.rows() != e_Nbodies || e_p0.rows() != e_Nbodies)
 			stop = true;
 }
 
@@ -39,7 +41,7 @@ void inputClass::print() {
 	body1.print();
 }
 
-solution::solution(VectorXd e_T, MatrixXd e_pTab, MatrixXd e_qTab)
+solution::solution(VectorXd &e_T, MatrixXd &e_pTab, MatrixXd &e_qTab)
 	: T(e_T), pTab(e_pTab), qTab(e_qTab) {
 	error_messege = "-- nothing to report -- \n";
 	stopped = false;

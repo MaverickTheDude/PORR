@@ -7,18 +7,18 @@
 //============================================================================
 
 #include <iostream>
-#include <Eigen>
+#include <Eigen/Dense>
 #include "PORR.h"
-using namespace std;
 using namespace Eigen;
+using std::cout;
+using std::endl;
 
 int main() {
-
-	int Nbodies = 2;
-	VectorXd z0(Nbodies), p0(Nbodies);
-	z0 << 0, 1;
-	p0 << 1, 0;
-	inputClass input(Nbodies, z0, p0);
+	int Nbodies = 1;
+	VectorXd q0(Nbodies), p0(Nbodies);
+	q0 << 0;
+	p0 << 1;
+	inputClass input(Nbodies, p0, q0);
 	//input.print();
 	cout << endl << input.stop << endl;
 	solution sol = RK_solver(input);
@@ -28,7 +28,9 @@ int main() {
 		return 1;
 	}
 
-	cout << sol.T << endl;
+	cout << sol.T.transpose() << endl;
+	cout << sol.pTab.transpose() << endl;
+	cout << sol.qTab.transpose() << endl;
 	return 0;
 
 
