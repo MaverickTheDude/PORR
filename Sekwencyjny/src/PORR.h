@@ -32,6 +32,7 @@ class inputClass {
 	body body1 = body(1, L, m);
 
 public:
+	const int N = static_cast<int>( std::round(Tk / dt) ) + 1;
 	const VectorXd p0;
 	const VectorXd q0;
 	bool stop = false;

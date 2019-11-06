@@ -7,7 +7,7 @@ using namespace Eigen;
 solution RK_solver(inputClass &input) {
 	const double dt = input.getdt();
 	const double Tk = input.getTk();
-	const int N = static_cast<int>( std::round(Tk/dt) ) + 1;
+	const int N = input.N;
 	const int n = input.q0.size();
 
 	if (input.stop)

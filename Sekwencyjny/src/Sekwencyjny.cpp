@@ -9,15 +9,18 @@
 #include <iostream>
 #include <Eigen/Dense>
 #include "PORR.h"
+#include <fstream>
 using namespace Eigen;
 using std::cout;
 using std::endl;
 
 int main() {
-	int Nbodies = 1;
+
+
+	int Nbodies = 2;
 	VectorXd q0(Nbodies), p0(Nbodies);
-	q0 << 0;
-	p0 << 1;
+	q0 << 0, 1;
+	p0 << 1, 2;
 	inputClass input(Nbodies, p0, q0);
 	//input.print();
 	cout << endl << input.stop << endl;
@@ -29,9 +32,22 @@ int main() {
 	}
 
 	cout << sol.T.transpose() << endl;
-	cout << sol.pTab.transpose() << endl;
-	cout << sol.qTab.transpose() << endl;
-	return 0;
+//	cout << sol.pTab.transpose() << endl;
+//	cout << sol.qTab.transpose() << endl;
+
+	std::ofstream outFile;
+	outFile.open("results.txt");
+
+	if (outFile.fail() ) {
+		std::cerr << "nie udalo sie otworzyc pliku.";
+		return 2;
+	}
+//	outFile << sol.T << sol.pTab.transpose() << sol.qTab << endl;
+	outFile << sol.pTab.transpose() << "\n" << sol.qTab.transpose() << endl;
+
+	    return 0;
+
+
 
 
 	//	double m = 0.4, L = 1;
@@ -58,12 +74,12 @@ int main() {
 
 	std::cout << "\n\n" << std::endl;
 
-	Matrix2f A, b;
+/*	Matrix2f A, b;
 	A << 2, -1, -1, 3;
 	b << 1, 2, 3, 1;
 	cout << "Here is the matrix A:\n" << A << endl;
 	cout << "Here is the right hand side b:\n" << b << endl;
 	Matrix2f x = A.ldlt().solve(b);
-	cout << "The solution is:\n" << x << endl;
+	cout << "The solution is:\n" << x << endl;*/
 	return 0;
 }
