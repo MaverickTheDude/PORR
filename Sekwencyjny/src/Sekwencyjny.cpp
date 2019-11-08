@@ -22,6 +22,7 @@ int main() {
 	q0 << 0, 1;
 	inputClass input(Nbodies, p0, q0);
 	//input.print();
+	//input.bodies[1].print();
 	cout << endl << input.stop << endl;
 	solution sol = RK_solver(input);
 
@@ -89,8 +90,10 @@ void done() {
 	 time (&tt);
 
 	 // Using localtime()
-	 tm * ti = localtime(&tt); // Co to za deklaracja? O.o
+	 tm * ti = localtime(&tt);
 
-	 std::cout << "Current Day, Date and Time is = "
-		  << asctime(ti) << std::endl;
+	 cout << "\nDone\n";
+	 cout << "Compilation time: \t" << __TIME__ << endl;
+//	 std::cout << "Current Day, Date and Time is = " << asctime(ti) << std::endl;
 }
+

@@ -13,9 +13,9 @@ using namespace Eigen;
 class body {
 	friend class inputClass;
 	const int id;
-	const double L, m;
-	const Vector2d sC1, sC2, s12;
-	const DiagonalMatrix<double, 3> M;
+	double L, m;
+	Vector2d sC1, sC2, s12;
+	Matrix3d M;
 
 	body(int e_id, double e_L, double e_m);
 	void print();
@@ -30,6 +30,7 @@ class inputClass {
 	const double dt = 0.02;
 	const double Tk = 1.0;
 	body body1 = body(1, L, m);
+	//body *bodies;
 
 public:
 	const int N = static_cast<int>( std::round(Tk / dt) ) + 1;
@@ -38,6 +39,7 @@ public:
 	bool stop = false;
 
 	inputClass(const int e_Nbodies, VectorXd e_p0, VectorXd e_q0);
+	~inputClass();
 	double getTk();
 	double getdt();
 	void print();
