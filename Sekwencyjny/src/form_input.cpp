@@ -1,5 +1,3 @@
-#include <iostream>
-#include <Eigen/Dense>
 #include "PORR.h"
 using namespace Eigen;
 using std::cout;

@@ -6,21 +6,20 @@
 // Description : Hello World in C++, Ansi-style
 //============================================================================
 
-#include <iostream>
-#include <Eigen/Dense>
-#include "PORR.h"
 #include <fstream>
+#include "PORR.h"
 using namespace Eigen;
 using std::cout;
 using std::endl;
 
-int main() {
+IOFormat exportFmt(FullPrecision, 0, " ", "\n", "", "", "", "");
 
+int main() {
 
 	int Nbodies = 2;
 	VectorXd q0(Nbodies), p0(Nbodies);
-	q0 << 0, 1;
 	p0 << 1, 2;
+	q0 << 0, 1;
 	inputClass input(Nbodies, p0, q0);
 	//input.print();
 	cout << endl << input.stop << endl;
@@ -31,9 +30,6 @@ int main() {
 		return 1;
 	}
 
-	cout << sol.T.transpose() << endl;
-//	cout << sol.pTab.transpose() << endl;
-//	cout << sol.qTab.transpose() << endl;
 
 	std::ofstream outFile;
 	outFile.open("results.txt");
@@ -42,10 +38,12 @@ int main() {
 		std::cerr << "nie udalo sie otworzyc pliku.";
 		return 2;
 	}
-//	outFile << sol.T << sol.pTab.transpose() << sol.qTab << endl;
-	outFile << sol.pTab.transpose() << "\n" << sol.qTab.transpose() << endl;
 
-	    return 0;
+	outFile << sol.T.transpose() << endl;
+	outFile << sol.pTab.format(exportFmt) << '\n' << sol.qTab.format(exportFmt) << endl;
+
+	done();
+	return 0;
 
 
 
@@ -82,4 +80,17 @@ int main() {
 	Matrix2f x = A.ldlt().solve(b);
 	cout << "The solution is:\n" << x << endl;*/
 	return 0;
+}
+
+void done() {
+	// Declaring argument for time()
+	 time_t tt;
+	 // Applying time()
+	 time (&tt);
+
+	 // Using localtime()
+	 tm * ti = localtime(&tt); // Co to za deklaracja? O.o
+
+	 std::cout << "Current Day, Date and Time is = "
+		  << asctime(ti) << std::endl;
 }

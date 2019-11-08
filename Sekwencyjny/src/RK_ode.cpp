@@ -1,6 +1,3 @@
-#include <iostream>
-//#include <cmath>
-#include <Eigen/Dense>
 #include "PORR.h"
 using namespace Eigen;
 
@@ -13,11 +10,6 @@ solution RK_solver(inputClass &input) {
 	if (input.stop)
 		return solution("niewlasciwa liczba argumentow wejsciowych");
 
-	// Inicjalizacja dziedziny czasowej
-/*	VectorXd T(N);
-	for (int i = 0; i < T.size(); i++) {
-		T[i] = static_cast<double>(i) * dt;
-	}*/
 	VectorXd T = VectorXd::LinSpaced(N, 0, Tk);
 	VectorXd y_m1(2*n);
 	MatrixXd pTab(n, N);	pTab.col(0) = input.p0;
@@ -27,11 +19,11 @@ solution RK_solver(inputClass &input) {
 
 
 	for (int i = 1; i < T.size(); i++) {
-		VectorXd k1 = RHS(T[i], y_m1, input);
-		VectorXd tmp = dt/2*k1;
-		VectorXd k2 = RHS(T[i] + dt/2, y_m1 + dt/2*k1, input);
-		VectorXd k3 = RHS(T[i] + dt/2, y_m1 + dt/2*k2, input);
-		VectorXd k4 = RHS(T[i] + dt,   y_m1 + dt*k3, input);
+		VectorXd k1 = RHS(T[i-1], y_m1, input);
+		VectorXd tmp = dt/2.0 * k1;
+		VectorXd k2 = RHS(T[i-1] + dt/2.0, y_m1 + dt/2.0*k1, input);
+		VectorXd k3 = RHS(T[i-1] + dt/2.0, y_m1 + dt/2.0*k2, input);
+		VectorXd k4 = RHS(T[i-1] + dt,   y_m1 + dt*k3, input);
 
 		VectorXd y = y_m1 +  dt/6 * (k1 + 2*k2 + 2*k3 + k4);
 

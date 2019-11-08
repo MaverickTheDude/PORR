@@ -7,8 +7,8 @@
 
 #include <iostream>
 #include <Eigen/Dense>
+#include <ctime>
 using namespace Eigen;
-const double PI = 4*atan(1);
 
 class body {
 	friend class inputClass;
@@ -58,5 +58,6 @@ solution RK_solver(inputClass &input);
 
 VectorXd RHS(double t, VectorXd Y, inputClass &input);
 
+void done();
 
 #endif /* PORR_H_ */

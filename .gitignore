@@ -1,3 +1,7 @@
+# Added:
+# Text files:
+*.txt
+
 # Prerequisites
 *.d
 
