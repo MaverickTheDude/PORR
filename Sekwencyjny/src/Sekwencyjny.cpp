@@ -19,16 +19,29 @@ int main() {
 	int Nbodies = 2;
 	VectorXd q0(Nbodies), p0(Nbodies);
 	p0 << 1, 2;
-	q0 << 0, 1;
+	q0 << M_PI/2.0, M_PI/2.0;
 	inputClass input(Nbodies, p0, q0);
-	//input.print();
-	//input.bodies[1].print();
-	cout << endl << input.stop << endl;
+
 	solution sol = RK_solver(input);
 
 	if (sol.stopped) {
 		cout << " PROBLEM!" << endl << sol.error_messege << endl;
 		return 1;
+	}
+
+	data_set datas(Nbodies);
+	int b = 0;
+	const VectorXd fi = get_abs_angles(q0);
+	const VectorXd omega = get_abs_angles(p0);
+
+	datas.set_S(q0, input);
+	datas.set_dS(q0, p0, input);
+	cout << datas.tab[b]->dS1c() << endl << datas.tab[b]->s1C() << endl;
+	done();
+	return 0;
+
+	for (int i = 0; i < Nbodies; i++) {
+		input.getBody(i).print();
 	}
 
 
@@ -43,6 +56,7 @@ int main() {
 	outFile << sol.T.transpose() << endl;
 	outFile << sol.pTab.format(exportFmt) << '\n' << sol.qTab.format(exportFmt) << endl;
 
+	cout << get_abs_angles(input.q0) << endl;
 	done();
 	return 0;
 
@@ -82,18 +96,3 @@ int main() {
 	cout << "The solution is:\n" << x << endl;*/
 	return 0;
 }
-
-void done() {
-	// Declaring argument for time()
-	 time_t tt;
-	 // Applying time()
-	 time (&tt);
-
-	 // Using localtime()
-	 tm * ti = localtime(&tt);
-
-	 cout << "\nDone\n";
-	 cout << "Compilation time: \t" << __TIME__ << endl;
-//	 std::cout << "Current Day, Date and Time is = " << asctime(ti) << std::endl;
-}
-
