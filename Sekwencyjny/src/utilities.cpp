@@ -60,29 +60,29 @@ void data::set_dS(const double &om) {
 }
 
 data_set::data_set(int e_n) : n(e_n) {
-	tab = new data*[e_n];
+	tab = new data[e_n];
 	for (int i = 0; i < e_n; i++) {
-		tab[i] = new data();
+		tab[i] = data();
 	}
 }
 data_set::~data_set() {
-	for(int i = 0; i < n; i++) {
+/*	for(int i = 0; i < n; i++) {
 		delete tab[i];
-	}
+	}*/
 	delete [] tab;
 }
 
 void data_set::set_S(const VectorXd &q, const inputClass &input) {
 	const VectorXd fi = get_abs_angles(q);
 	for (int i = 0; i < n; i++) {
-		tab[i]->set_S(i, fi[i], input);
+		tab[i].set_S(i, fi[i], input);
 	}
 }
 
 void data_set::set_dS(const VectorXd &q, const VectorXd &dq, const inputClass &input) {
 	const VectorXd omega = get_abs_angles(dq);
 	for (int i = 0; i < n; i++) {
-		tab[i]->set_dS(omega[i]);
+		tab[i].set_dS(omega[i]);
 	}
 }
 

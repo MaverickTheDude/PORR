@@ -30,13 +30,13 @@ int main() {
 	}
 
 	data_set datas(Nbodies);
-	int b = 0;
+	int b = 1;
 	const VectorXd fi = get_abs_angles(q0);
 	const VectorXd omega = get_abs_angles(p0);
 
 	datas.set_S(q0, input);
 	datas.set_dS(q0, p0, input);
-	cout << datas.tab[b]->dS1c() << endl << datas.tab[b]->s1C() << endl;
+	cout << datas.tab[b].S1c() << endl << datas.tab[b].s1C() << endl;
 	done();
 	return 0;
 

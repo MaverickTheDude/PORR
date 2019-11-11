@@ -5,8 +5,8 @@
 // # obiekt klasy data_set lepiej dac wewnatrz RHS(), czy przed petla RK_ode()?
 //   Lepiej zrobic dynamiczna tablice dynamicznych obiektow data, czy wektor?
 //   Wybor na chwile obecna: lokalnie utworzony obiekt data_set z dynamiczna tablica
-//   (bo nie-const rozmiar) dynamicznie tworzonych obiektow 'data' (ale skoro caly obiekt
-//   jest lokalny, to pojedyncze instancje 'data' mozna rowniez wywolac bez 'new'.
+//   (bo nie-const rozmiar) statycznie tworzonych obiektow 'data' (dynamiczna opcja
+//    z "new" zwraca blad Egiena - czemu?)
 // # Czemu do funkcji RHS() nie moge wyslac t i Y "by ref" ?
 
 #ifndef PORR_H_
@@ -100,7 +100,7 @@ class data_set {
 	int n;
 
 public:
-	data** tab;
+	data* tab;
 	data_set(int e_n);
 	~data_set();
 	void set_S(const VectorXd &q, const inputClass &input);
