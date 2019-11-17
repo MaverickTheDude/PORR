@@ -86,6 +86,44 @@ void data_set::set_dS(const VectorXd &q, const VectorXd &dq, const inputClass &i
 	}
 }
 
+MatrixXd getVelocity(const VectorXd &dq, const data_set &data) {
+	int Nbodies = dq.size();
+	MatrixXd V1(3, Nbodies);
+	V1.col(0) = data.tab[0].H() * dq(0);
+	for (int i = 1; i < Nbodies; i++) {
+		V1.col(i) = data.tab[i-1].S12().transpose() * V1.col(i-1) +
+					data.tab[i].H() * dq(i);
+	}
+	return V1;
+}
+
+Vector3d P1(const double &p, const Ref<VectorXd> &sig, const data &ith_data) {
+	return ith_data.H()*p + ith_data.D()*sig;
+}
+
+VectorXd v0_to_p0(const VectorXd &q0, const VectorXd &v0, const inputClass &input) {
+	int N = input.Nbodies;
+	VectorXd p0(N);
+	MatrixXd sig0(2, N);
+
+	data_set datas(N);
+	datas.set_S(q0, input);
+	datas.set_dS(q0, v0, input);
+	MatrixXd V1 = getVelocity(v0, datas);
+
+	// Baza indukcyjna dla ostatniego czlonu:
+	sig0.rightCols(1) = datas.tab[N-1].D().transpose() * datas.tab[N-1].M1() * V1.rightCols(1);
+	p0.tail(1) = 		datas.tab[N-1].H().transpose() * datas.tab[N-1].M1() * V1.rightCols(1);
+	// Rekursja do korzenia:
+	for (int i = N-2; i >= 0; i--) {
+		Vector3d P1Bart = P1(p0[i+1], sig0.col(i+1), datas.tab[i+1]);
+		Vector3d P1A = datas.tab[i].M1() * V1.col(i);
+		p0[i] =   	  datas.tab[i].H().transpose() * (P1A + datas.tab[i].S12() * P1Bart);
+		sig0.col(i) = datas.tab[i].D().transpose() * (P1A + datas.tab[i].S12() * P1Bart);
+	}
+	return p0;
+}
+
 /*class datas {
 std::vector<data> *tab;
 std::vector<data> datas;
@@ -100,16 +138,4 @@ datas(int e_n) {
 }
 };*/
 
-void done() {
-	// Declaring argument for time()
-	 time_t tt;
-	 // Applying time()
-	 time (&tt);
 
-	 // Using localtime()
-	 tm * ti = localtime(&tt);
-
-	 std::cout << "\nDone\n";
-	 std::cout << "Compilation time: \t" << __TIME__ << std::endl;
-//	 std::cout << "Current Day, Date and Time is = " << asctime(ti) << std::endl;
-}

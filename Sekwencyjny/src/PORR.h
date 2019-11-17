@@ -37,7 +37,6 @@ public:
 
 class inputClass {
 	friend class body;
-	const int Nbodies;
 	// parametry do ustawienia:
 	const double L = 1.0;
 	const double m = 0.4;
@@ -48,12 +47,13 @@ class inputClass {
 	std::vector<body> bodies;
 
 public:
+	const int Nbodies;
 	const int N = static_cast<int>( std::round(Tk / dt) ) + 1;
-	const VectorXd p0;
 	const VectorXd q0;
+	const VectorXd v0;
 	bool stop = false;
 
-	inputClass(const int &e_Nbodies, VectorXd e_p0, VectorXd e_q0);
+	inputClass(const int &e_Nbodies, VectorXd e_q0, VectorXd e_p0);
 	~inputClass();
 	double getTk() const;
 	double getdt() const;
@@ -69,6 +69,9 @@ class data {
 	MatrixXd _D = MatrixXd(3,2);
 
 public:
+	// zgodnie z case 1:
+	// http://eigen.tuxfamily.org/dox-devel/group__TopicUnalignedArrayAssert.html
+	EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 	data();
 
 	const Matrix3d & M1() const {return _M1;}
@@ -119,8 +122,12 @@ struct solution {
 };
 
 solution RK_solver(inputClass &input);
-VectorXd RHS(const double t, VectorXd Y, inputClass &input);
+VectorXd RHS(const double t, const VectorXd &Y, const inputClass &input);
 void done();
 VectorXd get_abs_angles(const VectorXd &q0);
+
+MatrixXd getVelocity(const VectorXd &dq, const data_set &data);
+Vector3d P1(const double &p, const Ref<VectorXd> &sig, const data &ith_data);
+VectorXd v0_to_p0(const VectorXd &q0, const VectorXd &v0, const inputClass &input);
 
 #endif /* PORR_H_ */

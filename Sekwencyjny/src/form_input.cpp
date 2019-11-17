@@ -19,10 +19,10 @@ void body::print() const {
 	cout << "Macierz masowa w CM: \t: " << endl << _M << endl;
 }
 
-inputClass::inputClass(const int &e_Nbodies, VectorXd e_p0, VectorXd e_q0)
- : Nbodies(e_Nbodies), p0(e_p0), q0(e_q0) {
+inputClass::inputClass(const int &e_Nbodies, VectorXd e_q0, VectorXd e_v0)
+ : Nbodies(e_Nbodies), q0(e_q0), v0(e_v0) {
 	//bodies = new body[e_Nbodies];
-	if (e_q0.rows() != e_Nbodies || e_p0.rows() != e_Nbodies)
+	if (e_q0.rows() != e_Nbodies || e_v0.rows() != e_Nbodies)
 			stop = true;
 	for (int i = 0; i < e_Nbodies; i++) {
 		const int ind = i + 1;
@@ -49,7 +49,7 @@ double inputClass::getdt() const {
 void inputClass::print() {
 	cout << "Liczba czlonow: \t" << Nbodies << endl;
 	cout << "Dziedzina czasowa: \t [0, " << dt << ", " << Tk << ", ]" << endl;
-	cout << "Warunki poczatkowe: \n p0 = " << p0.transpose() << "\n q0 = " << q0.transpose() << endl;
+	cout << "Warunki poczatkowe: \n p0 = " << v0.transpose() << "\n q0 = " << q0.transpose() << endl;
 }
 
 solution::solution(VectorXd &e_T, MatrixXd &e_pTab, MatrixXd &e_qTab)

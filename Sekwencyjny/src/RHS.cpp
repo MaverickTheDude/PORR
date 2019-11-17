@@ -4,7 +4,7 @@ using namespace Eigen;
 using std::cout;
 using std::endl;
 
-VectorXd RHS(const double t, VectorXd Y, inputClass &input) {
+VectorXd RHS(const double t, const VectorXd &Y, const inputClass &input) {
 	const int n = Y.size() / 2;
 	const VectorXd p = Y.head(n);
 	const VectorXd q = Y.tail(n);

@@ -12,9 +12,9 @@ solution RK_solver(inputClass &input) {
 
 	VectorXd T = VectorXd::LinSpaced(N, 0, Tk);
 	VectorXd y_m1(2*n);
-	MatrixXd pTab(n, N);	pTab.col(0) = input.p0;
+	MatrixXd pTab(n, N);	pTab.col(0) = input.v0;
 	MatrixXd qTab(n ,N);	qTab.col(0) = input.q0;
-	y_m1.head(n) = input.p0;
+	y_m1.head(n) = input.v0;
 	y_m1.tail(n) = input.q0;
 
 	for (int i = 1; i < T.size(); i++) {
