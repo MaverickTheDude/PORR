@@ -28,6 +28,31 @@ inputClass::inputClass(const int &e_Nbodies, VectorXd e_q0, VectorXd e_v0)
 		const int ind = i + 1;
 		bodies.push_back(body(ind, L, m));
 	}
+	v0_to_p0();
+}
+
+void inputClass::v0_to_p0() {
+	int N = Nbodies;
+	inputClass &input = *this;
+	VectorXd p0(N);
+	MatrixXd sig0(2, N);
+
+	data_set datas(N);
+	datas.set_S(q0, input);
+	datas.set_dS(q0, v0, input);
+	MatrixXd V1 = getVelocity(v0, datas);
+
+	// Baza indukcyjna dla ostatniego czlonu:
+	sig0.rightCols(1) = datas.tab[N-1].D().transpose() * datas.tab[N-1].M1() * V1.rightCols(1);
+	p0.tail(1) = 		datas.tab[N-1].H().transpose() * datas.tab[N-1].M1() * V1.rightCols(1);
+	// Rekursja do korzenia:
+	for (int i = N-2; i >= 0; i--) {
+		Vector3d P1Bart = P1(p0[i+1], sig0.col(i+1), datas.tab[i+1]);
+		Vector3d P1A = datas.tab[i].M1() * V1.col(i);
+		p0[i] =   	  datas.tab[i].H().transpose() * (P1A + datas.tab[i].S12() * P1Bart);
+		sig0.col(i) = datas.tab[i].D().transpose() * (P1A + datas.tab[i].S12() * P1Bart);
+	}
+	this->_p0 = p0;
 }
 
 body inputClass::getBody(int ith) const {

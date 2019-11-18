@@ -1,4 +1,3 @@
-#include <cmath>
 #include "PORR.h"
 using namespace Eigen;
 using std::cout;
@@ -16,6 +15,9 @@ VectorXd RHS(const double t, const VectorXd &Y, const inputClass &input) {
 	VectorXd dY(2*n);
 	dY << sin(2*pi*t), cos(2*pi/2*t), sin(2*pi*t), cos(2*pi/2*t);
 
-//	datas.set_dS(q, p, input);
 	return dY;
 }
+
+struct ksi {
+
+};

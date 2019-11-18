@@ -7,11 +7,12 @@
 //   Wybor na chwile obecna: lokalnie utworzony obiekt data_set z dynamiczna tablica
 //   (bo nie-const rozmiar) statycznie tworzonych obiektow 'data' (dynamiczna opcja
 //    z "new" zwraca blad Egiena - czemu?)
-// # Czemu do funkcji RHS() nie moge wyslac t i Y "by ref" ?
 
 #ifndef PORR_H_
 #define PORR_H_
 
+#undef __STRICT_ANSI__
+#include <cmath>
 #include <iostream>
 #include <Eigen/Dense>
 #include <vector>
@@ -42,9 +43,9 @@ class inputClass {
 	const double m = 0.4;
 	const double dt = 0.02;
 	const double Tk = 1.0;
-	//body body1 = body(1, L, m);
-	//body *bodies;
+	VectorXd _p0;
 	std::vector<body> bodies;
+	void v0_to_p0();
 
 public:
 	const int Nbodies;
@@ -52,7 +53,7 @@ public:
 	const VectorXd q0;
 	const VectorXd v0;
 	bool stop = false;
-
+	const VectorXd &p0() const {return _p0;}
 	inputClass(const int &e_Nbodies, VectorXd e_q0, VectorXd e_p0);
 	~inputClass();
 	double getTk() const;

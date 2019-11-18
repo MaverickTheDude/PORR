@@ -7,17 +7,22 @@ using std::endl;
 IOFormat exportFmt(FullPrecision, 0, " ", "\n", "", "", "", "");
 
 int main() {
-	int Nbodies = 4;
+	// STREFA WARUNKOW POCZATKOWYCH
+	int Nbodies = 2;
 	VectorXd q0(Nbodies), v0(Nbodies);
-	q0 << 0, -M_PI/4, 0, M_PI/4;
-	v0 << -1.0, 2, 0, 0.5;
+//	q0 << 0, -M_PI/4, 0, M_PI/4;
+//	v0 << -1.0, 2, 0, 0.5;
+	q0 << 0, -M_PI/4;
+	v0 << -1.0, 2;
 	inputClass input(Nbodies, q0, v0);
 
-	VectorXd p0 = v0_to_p0(q0, v0, input);
-	cout << p0 << endl;
+	cout << input.p0() << endl;
 
-	done();
-	return 0;
+	// STREFA TESTOW
+
+
+
+	// OBLICZENIA
 
 	solution sol = RK_solver(input);
 
@@ -26,20 +31,7 @@ int main() {
 		return 1;
 	}
 
-	data_set datas(Nbodies);
-	int b = 1;
-	const VectorXd fi = get_abs_angles(q0);
-	const VectorXd omega = get_abs_angles(v0);
-
-	datas.set_S(q0, input);
-	datas.set_dS(q0, v0, input);
-	cout << datas.tab[b].S1c() << endl << datas.tab[b].s1C() << endl;
-	done();
-	return 0;
-
-	for (int i = 0; i < Nbodies; i++) {
-		input.getBody(i).print();
-	}
+	// DRUKOWANIE WYNIKOW
 
 	std::ofstream outFile;
 	outFile.open("results.txt");

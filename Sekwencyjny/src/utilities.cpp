@@ -33,7 +33,6 @@ void data::set_S(const int ith, const double &fi, const inputClass &input) {
 	const Vector2d & sC1_loc = input.getBody(ith).sC1;
 	const Vector2d & sC2_loc = input.getBody(ith).sC2;
 
-
 	_s12 = Rot(fi)*s12_loc;   	_s21 = -Rot(fi)*s12_loc;
     _sC1 = Rot(fi)*sC1_loc;   	_s1C = -Rot(fi)*sC1_loc;
     _sC2 = Rot(fi)*sC2_loc;   	_s2C = -Rot(fi)*sC2_loc;
@@ -66,9 +65,6 @@ data_set::data_set(int e_n) : n(e_n) {
 	}
 }
 data_set::~data_set() {
-/*	for(int i = 0; i < n; i++) {
-		delete tab[i];
-	}*/
 	delete [] tab;
 }
 
@@ -100,42 +96,3 @@ MatrixXd getVelocity(const VectorXd &dq, const data_set &data) {
 Vector3d P1(const double &p, const Ref<VectorXd> &sig, const data &ith_data) {
 	return ith_data.H()*p + ith_data.D()*sig;
 }
-
-VectorXd v0_to_p0(const VectorXd &q0, const VectorXd &v0, const inputClass &input) {
-	int N = input.Nbodies;
-	VectorXd p0(N);
-	MatrixXd sig0(2, N);
-
-	data_set datas(N);
-	datas.set_S(q0, input);
-	datas.set_dS(q0, v0, input);
-	MatrixXd V1 = getVelocity(v0, datas);
-
-	// Baza indukcyjna dla ostatniego czlonu:
-	sig0.rightCols(1) = datas.tab[N-1].D().transpose() * datas.tab[N-1].M1() * V1.rightCols(1);
-	p0.tail(1) = 		datas.tab[N-1].H().transpose() * datas.tab[N-1].M1() * V1.rightCols(1);
-	// Rekursja do korzenia:
-	for (int i = N-2; i >= 0; i--) {
-		Vector3d P1Bart = P1(p0[i+1], sig0.col(i+1), datas.tab[i+1]);
-		Vector3d P1A = datas.tab[i].M1() * V1.col(i);
-		p0[i] =   	  datas.tab[i].H().transpose() * (P1A + datas.tab[i].S12() * P1Bart);
-		sig0.col(i) = datas.tab[i].D().transpose() * (P1A + datas.tab[i].S12() * P1Bart);
-	}
-	return p0;
-}
-
-/*class datas {
-std::vector<data> *tab;
-std::vector<data> datas;
-
-public:
-datas(int e_n) {
-	tab = new std::vector<data>;
-	for (int i = 0; i < e_n; i++) {
-		data *ith_data = new data();
-		tab[i].push_back(ith_data);
-	}
-}
-};*/
-
-
