@@ -96,3 +96,12 @@ MatrixXd getVelocity(const VectorXd &dq, const data_set &data) {
 Vector3d P1(const double &p, const Ref<VectorXd> &sig, const data &ith_data) {
 	return ith_data.H()*p + ith_data.D()*sig;
 }
+
+void ksi_coef::print() const {
+	std::cout << "ksi[" << _i << "]_11 \n" << i11 << std::endl << std::endl;
+	std::cout << "ksi[" << _i << "]_12 \n" << i12 << std::endl << std::endl;
+	std::cout << "ksi[" << _i << "]_21 \n" << i21 << std::endl << std::endl;
+	std::cout << "ksi[" << _i << "]_22 \n" << i22 << std::endl << std::endl;
+	std::cout << "ksi[" << _i << "]_10 \n" << i10 << std::endl << std::endl;
+	std::cout << "ksi[" << _i << "]_20 \n" << i20 << std::endl << std::endl;
+}

@@ -21,12 +21,12 @@ void body::print() const {
 
 inputClass::inputClass(const int &e_Nbodies, VectorXd e_q0, VectorXd e_v0)
  : Nbodies(e_Nbodies), q0(e_q0), v0(e_v0) {
-	//bodies = new body[e_Nbodies];
 	if (e_q0.rows() != e_Nbodies || e_v0.rows() != e_Nbodies)
 			stop = true;
+	bodies.reserve(e_Nbodies);
 	for (int i = 0; i < e_Nbodies; i++) {
 		const int ind = i + 1;
-		bodies.push_back(body(ind, L, m));
+		bodies.emplace_back(ind, L, m);
 	}
 	v0_to_p0();
 }

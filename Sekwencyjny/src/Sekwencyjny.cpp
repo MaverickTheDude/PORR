@@ -8,19 +8,27 @@ IOFormat exportFmt(FullPrecision, 0, " ", "\n", "", "", "", "");
 
 int main() {
 	// STREFA WARUNKOW POCZATKOWYCH
-	int Nbodies = 2;
+	int Nbodies = 4;
 	VectorXd q0(Nbodies), v0(Nbodies);
-//	q0 << 0, -M_PI/4, 0, M_PI/4;
-//	v0 << -1.0, 2, 0, 0.5;
-	q0 << 0, -M_PI/4;
-	v0 << -1.0, 2;
+	q0 << 0, -M_PI/4, 0, M_PI/4;
+	v0 << -1.0, 2, 0, 0.5;
 	inputClass input(Nbodies, q0, v0);
 
-	cout << input.p0() << endl;
-
 	// STREFA TESTOW
+	data_set datas = data_set(Nbodies);
+	datas.set_S(q0, input);
+
+	std::vector<ksi_coef> ksi;
+	ksi.reserve(Nbodies);
+	for (int i = 0; i < input.Nbodies; i++) {
+		ksi.emplace_back(input.p0(), datas, i);
+	}
+
+	ksi[3].print();
 
 
+	done();
+	return 0;
 
 	// OBLICZENIA
 
@@ -47,14 +55,6 @@ int main() {
 	cout << get_abs_angles(input.q0) << endl;
 	done();
 	return 0;
-
-/*	Matrix2f A, b;
-	A << 2, -1, -1, 3;
-	b << 1, 2, 3, 1;
-	cout << "Here is the matrix A:\n" << A << endl;
-	cout << "Here is the right hand side b:\n" << b << endl;
-	Matrix2f x = A.ldlt().solve(b);
-	cout << "The solution is:\n" << x << endl;*/
 }
 
 

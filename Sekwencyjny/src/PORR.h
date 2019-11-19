@@ -29,8 +29,8 @@ class body {
 	double L, m;
 	Matrix3d _M;
 
-	body(int e_id, double e_L, double e_m);
 public:
+	body(int e_id, double e_L, double e_m);
 	const Vector2d sC1, sC2, s12;
 	const Matrix3d & M() const {return _M;}
 	void print() const;
@@ -39,8 +39,8 @@ public:
 class inputClass {
 	friend class body;
 	// parametry do ustawienia:
-	const double L = 1.0;
-	const double m = 0.4;
+	const double L = 0.4;
+	const double m = 0.5;
 	const double dt = 0.02;
 	const double Tk = 1.0;
 	VectorXd _p0;
@@ -78,6 +78,7 @@ public:
 	const Matrix3d & M1() const {return _M1;}
 	const Matrix3d & M2() const {return _M2;}
 	const Matrix3d & S12() const {return _S12;}
+	const Matrix3d & S21() const {return _S21;}
 	const Matrix3d & S1c() const {return _S1c;}
 	const Matrix3d & Sc1() const {return _Sc1;}
 	const Vector2d & s12() const {return _s12;}
@@ -130,5 +131,13 @@ VectorXd get_abs_angles(const VectorXd &q0);
 MatrixXd getVelocity(const VectorXd &dq, const data_set &data);
 Vector3d P1(const double &p, const Ref<VectorXd> &sig, const data &ith_data);
 VectorXd v0_to_p0(const VectorXd &q0, const VectorXd &v0, const inputClass &input);
+
+struct ksi_coef {
+	const int _i;
+	Matrix3d i11, i12, i21, i22;
+	Vector3d i10, i20;
+	ksi_coef(const VectorXd &p, const data_set &data, int i);
+	void print() const;
+};
 
 #endif /* PORR_H_ */
