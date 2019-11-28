@@ -49,9 +49,11 @@ class inputClass {
 
 public:
 	const int Nbodies;
-	const int N = static_cast<int>( std::round(Tk / dt) ) + 1;
 	const VectorXd q0;
 	const VectorXd v0;
+	const unsigned int tiers;
+	int* tiers_info;	// pytanie: jak zrobic aby tiers_info bylo const i mialo const elementy?
+	const int N = static_cast<int>( round(Tk / dt) ) + 1;
 	bool stop = false;
 	const VectorXd &p0() const {return _p0;}
 	inputClass(const int &e_Nbodies, VectorXd e_q0, VectorXd e_p0);

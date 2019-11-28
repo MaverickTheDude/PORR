@@ -20,7 +20,9 @@ void body::print() const {
 }
 
 inputClass::inputClass(const int &e_Nbodies, VectorXd e_q0, VectorXd e_v0)
- : Nbodies(e_Nbodies), q0(e_q0), v0(e_v0) {
+ : Nbodies(e_Nbodies), q0(e_q0), v0(e_v0),
+   tiers(ceil(log2(e_Nbodies))+1)
+	{
 	if (e_q0.rows() != e_Nbodies || e_v0.rows() != e_Nbodies)
 			stop = true;
 	bodies.reserve(e_Nbodies);
@@ -29,6 +31,14 @@ inputClass::inputClass(const int &e_Nbodies, VectorXd e_q0, VectorXd e_v0)
 		bodies.emplace_back(ind, L, m);
 	}
 	v0_to_p0();
+
+	int Ntmp = e_Nbodies;
+	tiers_info = new int[tiers];
+	for (int i = 0; i < tiers; i++){
+		tiers_info[i] = Ntmp;
+		cout << tiers_info[i] << endl;
+		Ntmp = ceil(static_cast<double>(Ntmp) / 2.0);
+	}
 }
 
 void inputClass::v0_to_p0() {
@@ -60,7 +70,7 @@ body inputClass::getBody(int ith) const {
 }
 
 inputClass::~inputClass() {
-	//delete [] bodies;
+	delete [] tiers_info;
 }
 
 double inputClass::getTk() const {
