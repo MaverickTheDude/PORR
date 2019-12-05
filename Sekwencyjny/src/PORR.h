@@ -135,10 +135,11 @@ Vector3d P1(const double &p, const Ref<VectorXd> &sig, const data &ith_data);
 VectorXd v0_to_p0(const VectorXd &q0, const VectorXd &v0, const inputClass &input);
 
 struct ksi_coef {
-	const int _i;
 	Matrix3d i11, i12, i21, i22;
 	Vector3d i10, i20;
 	ksi_coef(const VectorXd &p, const data_set &data, int i);
+	ksi_coef(const ksi_coef &_ksi);
+	ksi_coef();
 	void print() const;
 };
 

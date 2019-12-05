@@ -1,6 +1,9 @@
 # Added:
 # Text files:
 *.txt
+/brudnopis
+Sekwencyjny/results.txt
+*.xml
 
 # Prerequisites
 *.d

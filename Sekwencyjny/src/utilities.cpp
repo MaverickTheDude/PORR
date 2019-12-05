@@ -83,7 +83,7 @@ void data_set::set_dS(const VectorXd &q, const VectorXd &dq, const inputClass &i
 }
 
 MatrixXd getVelocity(const VectorXd &dq, const data_set &data) {
-	int Nbodies = dq.size();
+	signed int Nbodies = dq.size();
 	MatrixXd V1(3, Nbodies);
 	V1.col(0) = data.tab[0].H() * dq(0);
 	for (int i = 1; i < Nbodies; i++) {
@@ -97,11 +97,13 @@ Vector3d P1(const double &p, const Ref<VectorXd> &sig, const data &ith_data) {
 	return ith_data.H()*p + ith_data.D()*sig;
 }
 
+
 void ksi_coef::print() const {
-	std::cout << "ksi[" << _i << "]_11 \n" << i11 << std::endl << std::endl;
-	std::cout << "ksi[" << _i << "]_12 \n" << i12 << std::endl << std::endl;
-	std::cout << "ksi[" << _i << "]_21 \n" << i21 << std::endl << std::endl;
-	std::cout << "ksi[" << _i << "]_22 \n" << i22 << std::endl << std::endl;
-	std::cout << "ksi[" << _i << "]_10 \n" << i10 << std::endl << std::endl;
-	std::cout << "ksi[" << _i << "]_20 \n" << i20 << std::endl << std::endl;
+	std::cout << "ksi_11 \n" << i11 << std::endl << std::endl;
+	std::cout << "ksi_12 \n" << i12 << std::endl << std::endl;
+	std::cout << "ksi_21 \n" << i21 << std::endl << std::endl;
+	std::cout << "ksi_22 \n" << i22 << std::endl << std::endl;
+	std::cout << "ksi_10 \n" << i10 << std::endl << std::endl;
+	std::cout << "ksi_20 \n" << i20 << std::endl << std::endl;
 }
+

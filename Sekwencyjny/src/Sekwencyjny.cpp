@@ -10,19 +10,15 @@ class Assembly {
 public:
 	ksi_coef ksi;
 	Matrix3d S12;
-	ksi_coef *ksiA, *ksiB;
+	const Assembly *AssA, *AssB;
 
 	Assembly(const ksi_coef &_ksi, const Matrix3d &_S12)
 	: ksi(_ksi), S12(_S12)  {
-		ksiA = nullptr;
-		ksiB = nullptr;
+		AssA = nullptr;
+		AssB = nullptr;
 	}
 
 	Assembly(const Assembly &A, const Assembly &B) {
-
-		//To do: zrealizowac konstruktor defaultowy (albo taki, ktory zadziala) dla
-		// 			ksi_coef
-		// To do: zrozumiec, czemu nie moge zdefiniowac wskaznikow prosto na obiekty A i B
 		Vector3d H = Vector3d(0.0, 0.0, 1.0);
 		MatrixXd D = MatrixXd(3,2);
 		D << 1, 0, 0, 1, 0, 0;
@@ -39,8 +35,8 @@ public:
 		ksi.i10 =  A.ksi.i10 - A.ksi.i12 * beta;
 		ksi.i20 =  B.ksi.i20 + B.ksi.i21 * beta;
 
-		ksiA = *A.ksi;
-		ksiB = *B.ksi;
+		AssA = &A;
+		AssB = &B;
 
 //		C = - D.' * (ksiB.i11 + ksiA.i22) * D; % no inverse here (!)
 //		W = D * (C \ D.');
@@ -59,7 +55,7 @@ public:
 
 int main() {
 	// STREFA WARUNKOW POCZATKOWYCH
-	int Nbodies = 4;
+	const int Nbodies = 4;
 	VectorXd q0(Nbodies), v0(Nbodies);
 	q0 << 0, -M_PI/4, 0, M_PI/4;
 	v0 << -1.0, 2, 0, 0.5;
@@ -85,6 +81,8 @@ int main() {
 	Assembly AssemblyC = Assembly(base_assembly[0], base_assembly[1]);
 	Assembly AssemblyD = Assembly(base_assembly[2], base_assembly[3]);
 	Assembly AssemblyS = Assembly(AssemblyC, AssemblyD);
+
+	std::cout << AssemblyS.ksi.i11 << std::endl << AssemblyS.S12 << std::endl;
 
 
 	done();

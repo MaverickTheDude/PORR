@@ -28,9 +28,8 @@ VectorXd RHS(const double t, const VectorXd &Y, const inputClass &input) {
 	return dY;
 }
 
-ksi_coef::ksi_coef(const VectorXd &p, const data_set &data, int i)
- 	 : _i(i) {
-	int Nbodies = p.size();
+ksi_coef::ksi_coef(const VectorXd &p, const data_set &data, int i) {
+	signed int Nbodies = p.size();
 	i11 = data.tab[i].M1().inverse();
 	i22 = data.tab[i].M2().inverse();
 	i12 = data.tab[i].M1().llt().solve( data.tab[i].S12() );
@@ -47,3 +46,13 @@ ksi_coef::ksi_coef(const VectorXd &p, const data_set &data, int i)
 	i20 = data.tab[i].M2().llt().solve(rhs20);
 }
 
+ksi_coef::ksi_coef() {}
+
+ksi_coef::ksi_coef(const ksi_coef &_ksi) {
+	i11 = _ksi.i11;
+	i22 = _ksi.i22;
+	i12 = _ksi.i12;
+	i21 = _ksi.i21;
+	i10 = _ksi.i10;
+	i20 = _ksi.i20;
+}
