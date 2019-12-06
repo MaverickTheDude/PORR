@@ -4,7 +4,7 @@ using std::cout;
 using std::endl;
 
 VectorXd RHS(const double t, const VectorXd &Y, const inputClass &input) {
-	const int n = Y.size() / 2;
+	const unsigned int n = Y.size() / 2;
 	const VectorXd p = Y.head(n);
 	const VectorXd q = Y.tail(n);
 
@@ -29,11 +29,11 @@ VectorXd RHS(const double t, const VectorXd &Y, const inputClass &input) {
 }
 
 ksi_coef::ksi_coef(const VectorXd &p, const data_set &data, int i) {
-	signed int Nbodies = p.size();
+	int Nbodies = p.size();
 	i11 = data.tab[i].M1().inverse();
 	i22 = data.tab[i].M2().inverse();
-	i12 = data.tab[i].M1().llt().solve( data.tab[i].S12() );
-	i21 = data.tab[i].M2().llt().solve( data.tab[i].S21() );
+	i12 = data.tab[i].M1().ldlt().solve( data.tab[i].S12() );
+	i21 = data.tab[i].M2().ldlt().solve( data.tab[i].S21() );
 
 	Vector3d rhs10, rhs20;
 	rhs10 = data.tab[i].H()*p[i];
@@ -42,11 +42,22 @@ ksi_coef::ksi_coef(const VectorXd &p, const data_set &data, int i) {
 		rhs10 -= data.tab[i+1].S12()*data.tab[i+1].H()*p[i+1];
 		rhs20 -= data.tab[i+1].H()*p[i+1];
 	}
-	i10 = data.tab[i].M1().llt().solve(rhs10);
-	i20 = data.tab[i].M2().llt().solve(rhs20);
+	i10 = data.tab[i].M1().ldlt().solve(rhs10);
+	i20 = data.tab[i].M2().ldlt().solve(rhs20);
 }
 
-ksi_coef::ksi_coef() { /*Note: trzeba zdefiniowac, mimo ze jest 100% defaultowy*/}
+bool ksi_coef::check_if_ok() const {
+	Matrix3d tmp = i21 - i12.transpose();
+	for (int i = 0; i < 3; i++) {
+		for (int j = 0; j < 3; j++) {
+			if (abs(tmp(i,j)) > 1e-10){
+				std::cout << "Sprawdzamy czy ok: \n" << tmp << std::endl; return false; }
+		}
+	}
+	return true;
+}
+
+ksi_coef::ksi_coef() {/*Note: trzeba zdefiniowac, mimo ze jest 100% defaultowy*/}
 
 ksi_coef::ksi_coef(const ksi_coef &_ksi) {
 	i11 = _ksi.i11;
@@ -70,8 +81,11 @@ Assembly::Assembly(const Assembly &A, const Assembly &B) {
 	S12 = A.S12 * B.S12;
 	Matrix2d C  = - D.transpose() * (B.ksi.i11 + A.ksi.i22) * D;
 	Vector2d b  =   D.transpose() * (B.ksi.i10 - A.ksi.i20);
-	Matrix3d W  =   D * C.llt().solve(D.transpose());
-	Vector3d beta = D * C.llt().solve(b);
+	Matrix3d W  =   D * C.ldlt().solve(D.transpose());
+	Vector3d beta = D * C.ldlt().solve(b);
+
+//	A.ksi.print();
+//	B.ksi.print();
 
 	ksi.i11 =  A.ksi.i11 + A.ksi.i12 * W * A.ksi.i21;
 	ksi.i22 =  B.ksi.i22 + B.ksi.i21 * W * B.ksi.i12;

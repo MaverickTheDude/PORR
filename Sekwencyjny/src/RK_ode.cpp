@@ -5,7 +5,7 @@ solution RK_solver(inputClass &input) {
 	const double dt = input.getdt();
 	const double Tk = input.getTk();
 	const int N = input.N;
-	const int n = input.q0.size();
+	const unsigned int n = input.q0.size();
 
 	if (input.stop)
 		return solution("niewlasciwa liczba argumentow wejsciowych");

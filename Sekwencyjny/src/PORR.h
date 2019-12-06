@@ -140,6 +140,8 @@ struct ksi_coef {
 	ksi_coef(const VectorXd &p, const data_set &data, int i);
 	ksi_coef(const ksi_coef &_ksi);
 	ksi_coef();
+	bool check_if_ok() const;
+	void print();
 	void print() const;
 };
 
