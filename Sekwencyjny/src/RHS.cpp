@@ -46,7 +46,7 @@ ksi_coef::ksi_coef(const VectorXd &p, const data_set &data, int i) {
 	i20 = data.tab[i].M2().llt().solve(rhs20);
 }
 
-ksi_coef::ksi_coef() {}
+ksi_coef::ksi_coef() { /*Note: trzeba zdefiniowac, mimo ze jest 100% defaultowy*/}
 
 ksi_coef::ksi_coef(const ksi_coef &_ksi) {
 	i11 = _ksi.i11;
@@ -56,3 +56,41 @@ ksi_coef::ksi_coef(const ksi_coef &_ksi) {
 	i10 = _ksi.i10;
 	i20 = _ksi.i20;
 }
+
+Assembly::Assembly(const ksi_coef &_ksi, const Matrix3d &_S12)
+: ksi(_ksi), S12(_S12)  {
+	AssA = nullptr;
+	AssB = nullptr;
+}
+
+Assembly::Assembly(const Assembly &A, const Assembly &B) {
+	Vector3d H = Vector3d(0.0, 0.0, 1.0);
+	MatrixXd D = MatrixXd(3,2);
+	D << 1, 0, 0, 1, 0, 0;
+	S12 = A.S12 * B.S12;
+	Matrix2d C  = - D.transpose() * (B.ksi.i11 + A.ksi.i22) * D;
+	Vector2d b  =   D.transpose() * (B.ksi.i10 - A.ksi.i20);
+	Matrix3d W  =   D * C.llt().solve(D.transpose());
+	Vector3d beta = D * C.llt().solve(b);
+
+	ksi.i11 =  A.ksi.i11 + A.ksi.i12 * W * A.ksi.i21;
+	ksi.i22 =  B.ksi.i22 + B.ksi.i21 * W * B.ksi.i12;
+	ksi.i12 = -A.ksi.i12 * W * B.ksi.i12;
+	ksi.i21 = -B.ksi.i21 * W * A.ksi.i21;
+	ksi.i10 =  A.ksi.i10 - A.ksi.i12 * beta;
+	ksi.i20 =  B.ksi.i20 + B.ksi.i21 * beta;
+
+	AssA = &A;
+	AssB = &B;
+}
+
+/*C = - D.' * (ksiB.i11 + ksiA.i22) * D; % no inverse here (!)
+W = D * (C \ D.');
+b = D.' * (ksiB.i10 - ksiA.i20);
+beta = D * (C \ b);
+ksi11 = ksiA.i11 + ksiA.i12 * W * ksiA.i21;
+ksi22 = ksiB.i22 + ksiB.i21 * W * ksiB.i12;
+ksi12 = -ksiA.i12 * W * ksiB.i12;
+ksi21 = -ksiB.i21 * W * ksiA.i21;
+ksi10 = ksiA.i10 - ksiA.i12 * beta;
+ksi20 = ksiB.i20 + ksiB.i21 * beta;*/

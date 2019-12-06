@@ -143,4 +143,14 @@ struct ksi_coef {
 	void print() const;
 };
 
+class Assembly {
+public:
+	ksi_coef ksi;
+	Matrix3d S12;
+	const Assembly *AssA, *AssB;
+
+	Assembly(const ksi_coef &_ksi, const Matrix3d &_S12);
+	Assembly(const Assembly &A, const Assembly &B);
+};
+
 #endif /* PORR_H_ */

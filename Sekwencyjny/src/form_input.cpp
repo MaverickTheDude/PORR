@@ -34,7 +34,7 @@ inputClass::inputClass(const int &e_Nbodies, VectorXd e_q0, VectorXd e_v0)
 
 	int Ntmp = e_Nbodies;
 	tiers_info = new int[tiers];
-	for (int i = 0; i < tiers; i++){
+	for (unsigned int i = 0; i < tiers; i++){
 		tiers_info[i] = Ntmp;
 		cout << tiers_info[i] << endl;
 		Ntmp = ceil(static_cast<double>(Ntmp) / 2.0);
