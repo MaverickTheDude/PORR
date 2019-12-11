@@ -38,7 +38,7 @@ ksi_coef::ksi_coef(const VectorXd &p, const data_set &data, int i) {
 	Vector3d rhs10, rhs20;
 	rhs10 = data.tab[i].H()*p[i];
 	rhs20 = data.tab[i].S21()*data.tab[i].H()*p[i];
-	if (i < Nbodies-2) {
+	if (i < Nbodies-1) {
 		rhs10 -= data.tab[i+1].S12()*data.tab[i+1].H()*p[i+1];
 		rhs20 -= data.tab[i+1].H()*p[i+1];
 	}
@@ -84,9 +84,6 @@ Assembly::Assembly(const Assembly &A, const Assembly &B) {
 	Matrix3d W  =   D * C.ldlt().solve(D.transpose());
 	Vector3d beta = D * C.ldlt().solve(b);
 
-//	A.ksi.print();
-//	B.ksi.print();
-
 	ksi.i11 =  A.ksi.i11 + A.ksi.i12 * W * A.ksi.i21;
 	ksi.i22 =  B.ksi.i22 + B.ksi.i21 * W * B.ksi.i12;
 	ksi.i12 = -A.ksi.i12 * W * B.ksi.i12;
@@ -98,13 +95,27 @@ Assembly::Assembly(const Assembly &A, const Assembly &B) {
 	AssB = &B;
 }
 
-/*C = - D.' * (ksiB.i11 + ksiA.i22) * D; % no inverse here (!)
-W = D * (C \ D.');
-b = D.' * (ksiB.i10 - ksiA.i20);
-beta = D * (C \ b);
-ksi11 = ksiA.i11 + ksiA.i12 * W * ksiA.i21;
-ksi22 = ksiB.i22 + ksiB.i21 * W * ksiB.i12;
-ksi12 = -ksiA.i12 * W * ksiB.i12;
-ksi21 = -ksiB.i21 * W * ksiA.i21;
-ksi10 = ksiA.i10 - ksiA.i12 * beta;
-ksi20 = ksiB.i20 + ksiB.i21 * beta;*/
+Matrix<double, 3, Dynamic> set_forces_at_H1(data_set &datas, inputClass &input) {
+	const double g = 9.80665;
+	MatrixXd Q1(3, input.Nbodies);
+	Vector3d F = Vector3d(0.0, 0.0, 0.0);
+	for (int i = 0; i < input.Nbodies; i++) {
+		double m = input.bodies[i].m();
+		F(1) = - m * g;
+		Q1.col(i) = datas.tab[i].S1c() * F;
+	}
+	return Q1;
+}
+
+acc_force::acc_force(Vector3d _Q1, const Matrix3d &_S12)
+	: Q1(_Q1), S12(_S12) {
+	AssA = nullptr;
+	AssB = nullptr;
+}
+
+acc_force::acc_force(const acc_force &A, const acc_force &B) {
+	S12 = A.S12 * B.S12;
+	Q1 = A.Q1 + A.S12 * B.Q1;
+	AssA = &A;
+	AssB = &B;
+}

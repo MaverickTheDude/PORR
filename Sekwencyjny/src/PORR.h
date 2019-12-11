@@ -26,12 +26,13 @@ const Matrix2d Om = Rot(M_PI / 2.0);
 class body {
 	friend class inputClass;
 	const int id;
-	double L, m;
+	const double L, _m;
 	Matrix3d _M;
 
 public:
 	body(int e_id, double e_L, double e_m);
 	const Vector2d sC1, sC2, s12;
+	double m() const {return _m;}
 	const Matrix3d & M() const {return _M;}
 	void print() const;
 };
@@ -44,13 +45,13 @@ class inputClass {
 	const double dt = 0.02;
 	const double Tk = 1.0;
 	VectorXd _p0;
-	std::vector<body> bodies;
 	void v0_to_p0();
 
 public:
 	const int Nbodies;
 	const VectorXd q0;
 	const VectorXd v0;
+	std::vector<body> bodies;
 	const unsigned int tiers;
 	int* tiers_info;	// pytanie: jak zrobic aby tiers_info bylo const i mialo const elementy?
 	const int N = static_cast<int>( round(Tk / dt) ) + 1;
@@ -133,6 +134,7 @@ VectorXd get_abs_angles(const VectorXd &q0);
 MatrixXd getVelocity(const VectorXd &dq, const data_set &data);
 Vector3d P1(const double &p, const Ref<VectorXd> &sig, const data &ith_data);
 VectorXd v0_to_p0(const VectorXd &q0, const VectorXd &v0, const inputClass &input);
+Matrix<double, 3, Dynamic> set_forces_at_H1(data_set &datas, inputClass &input);
 
 struct ksi_coef {
 	Matrix3d i11, i12, i21, i22;
@@ -141,7 +143,12 @@ struct ksi_coef {
 	ksi_coef(const ksi_coef &_ksi);
 	ksi_coef();
 	bool check_if_ok() const;
-	void print();
+	Matrix3d g11() const;
+	Matrix3d g12() const;
+	Matrix3d g21() const;
+	Matrix3d g22() const;
+	Vector3d g10() const;
+	Vector3d g20() const;
 	void print() const;
 };
 
@@ -153,6 +160,15 @@ public:
 
 	Assembly(const ksi_coef &_ksi, const Matrix3d &_S12);
 	Assembly(const Assembly &A, const Assembly &B);
+};
+
+class acc_force {
+public:
+	Vector3d Q1;
+	Matrix3d S12;
+	const acc_force *AssA, *AssB;
+	acc_force(Vector3d _Q1, const Matrix3d &_S12); // pierwszy arg. by val, bo error (czemu?)
+	acc_force(const acc_force &A, const acc_force &B);
 };
 
 #endif /* PORR_H_ */

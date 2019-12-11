@@ -5,15 +5,15 @@ using std::endl;
 
 
 body::body(int e_id, double e_L, double e_m)
-	: id(e_id), L(e_L), m(e_m), sC1(-L/2,0), sC2(L/2,0), s12(L,0) {
-	DiagonalMatrix<double, 3> M_tmp(m, m, 1.0/12.0*m*L*L);
+	: id(e_id), L(e_L), _m(e_m), sC1(-L/2,0), sC2(L/2,0), s12(L,0) {
+	DiagonalMatrix<double, 3> M_tmp(_m, _m, 1.0/12.0*_m*L*L);
 	_M = M_tmp;
 }
 
 void body::print() const {
 	cout << "czlon " << id << ": " << endl;
 	cout << "dlugosc: \t" << L << endl;
-	cout << "massa: \t" << m << endl;
+	cout << "massa: \t" << _m << endl;
 	cout << "interfejsy: \n" << "sC1: " << sC1.transpose() << ",\tsC2: " <<
 			 sC2.transpose() << ",\ts12: " << s12.transpose() << endl;
 	cout << "Macierz masowa w CM: \t: " << endl << _M << endl;
