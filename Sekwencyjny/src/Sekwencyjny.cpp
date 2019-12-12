@@ -47,13 +47,20 @@ int main() {
 	Assembly AssemblyS = Assembly(AssemblyC, AssemblyD);
 	acc_force Qacc_S = acc_force(Qacc_C, Qacc_D);
 
-	//base body connection
+	AssemblyS.connect_base_body();
+	Qacc_S.connect_base_body();
+
+/*	//base body connection
 	Matrix2d c = - D.transpose() * AssemblyS.ksi.i11 * D;
 	Vector3d T1S = D * c.ldlt().solve(D.transpose()) * AssemblyS.ksi.i10;
 
 	std::cout << Qacc_S.Q1 << std::endl << Qacc_S.S12 << std::endl;
-	std::cout << "-----------" << endl;
 	std::cout << c << std::endl << T1S << std::endl;
+	std::cout << "-----------" << endl;
+	std::cout << Qacc_S.Q1art << std::endl << Qacc_S.Q2art << std::endl;
+	std::cout << AssemblyS.T1 << std::endl << AssemblyS.T2 << std::endl;*/
+
+
 
 	done();
 	return 0;

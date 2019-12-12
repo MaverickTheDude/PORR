@@ -72,11 +72,10 @@ Assembly::Assembly(const ksi_coef &_ksi, const Matrix3d &_S12)
 : ksi(_ksi), S12(_S12)  {
 	AssA = nullptr;
 	AssB = nullptr;
+	D << 1, 0, 0, 1, 0, 0;
 }
 
 Assembly::Assembly(const Assembly &A, const Assembly &B) {
-	Vector3d H = Vector3d(0.0, 0.0, 1.0);
-	MatrixXd D = MatrixXd(3,2);
 	D << 1, 0, 0, 1, 0, 0;
 	S12 = A.S12 * B.S12;
 	Matrix2d C  = - D.transpose() * (B.ksi.i11 + A.ksi.i22) * D;
@@ -95,6 +94,17 @@ Assembly::Assembly(const Assembly &A, const Assembly &B) {
 	AssB = &B;
 }
 
+void Assembly::connect_base_body() {
+	Matrix2d c = - D.transpose() * ksi.i11 * D;
+	T1 = D * c.ldlt().solve(D.transpose()) * ksi.i10;
+	T2 << 0.0, 0.0, 0.0;
+}
+
+void acc_force::connect_base_body() {
+	Q1art = Q1;
+	Q2art << 0.0, 0.0, 0.0;
+}
+
 Matrix<double, 3, Dynamic> set_forces_at_H1(data_set &datas, inputClass &input) {
 	const double g = 9.80665;
 	MatrixXd Q1(3, input.Nbodies);
@@ -107,6 +117,7 @@ Matrix<double, 3, Dynamic> set_forces_at_H1(data_set &datas, inputClass &input) 
 	return Q1;
 }
 
+// pierwszy arg. by val, bo error (czemu?)
 acc_force::acc_force(Vector3d _Q1, const Matrix3d &_S12)
 	: Q1(_Q1), S12(_S12) {
 	AssA = nullptr;
