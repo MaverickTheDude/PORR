@@ -68,6 +68,18 @@ ksi_coef::ksi_coef(const ksi_coef &_ksi) {
 	i20 = _ksi.i20;
 }
 
+Matrix<double, 3, Dynamic> set_forces_at_H1(data_set &datas, inputClass &input) {
+	const double g = 9.80665;
+	MatrixXd Q1(3, input.Nbodies);
+	Vector3d F = Vector3d(0.0, 0.0, 0.0);
+	for (int i = 0; i < input.Nbodies; i++) {
+		double m = input.bodies[i].m();
+		F(1) = - m * g;
+		Q1.col(i) = datas.tab[i].S1c() * F;
+	}
+	return Q1;
+}
+
 Assembly::Assembly(const ksi_coef &_ksi, const Matrix3d &_S12)
 : ksi(_ksi), S12(_S12)  {
 	AssA = nullptr;
@@ -94,29 +106,6 @@ Assembly::Assembly(const Assembly &A, const Assembly &B) {
 	AssB = &B;
 }
 
-void Assembly::connect_base_body() {
-	Matrix2d c = - D.transpose() * ksi.i11 * D;
-	T1 = D * c.ldlt().solve(D.transpose()) * ksi.i10;
-	T2 << 0.0, 0.0, 0.0;
-}
-
-void acc_force::connect_base_body() {
-	Q1art = Q1;
-	Q2art << 0.0, 0.0, 0.0;
-}
-
-Matrix<double, 3, Dynamic> set_forces_at_H1(data_set &datas, inputClass &input) {
-	const double g = 9.80665;
-	MatrixXd Q1(3, input.Nbodies);
-	Vector3d F = Vector3d(0.0, 0.0, 0.0);
-	for (int i = 0; i < input.Nbodies; i++) {
-		double m = input.bodies[i].m();
-		F(1) = - m * g;
-		Q1.col(i) = datas.tab[i].S1c() * F;
-	}
-	return Q1;
-}
-
 // pierwszy arg. by val, bo error (czemu?)
 acc_force::acc_force(Vector3d _Q1, const Matrix3d &_S12)
 	: Q1(_Q1), S12(_S12) {
@@ -129,4 +118,30 @@ acc_force::acc_force(const acc_force &A, const acc_force &B) {
 	Q1 = A.Q1 + A.S12 * B.Q1;
 	AssA = &A;
 	AssB = &B;
+}
+
+void Assembly::connect_base_body() {
+	Matrix2d c = - D.transpose() * ksi.i11 * D;
+	T1 = D * c.ldlt().solve(D.transpose()) * ksi.i10;
+	T2 << 0.0, 0.0, 0.0;
+}
+
+void acc_force::connect_base_body() {
+	Q1art = Q1;
+	Q2art << 0.0, 0.0, 0.0;
+}
+
+void Assembly::disassemble() {
+Matrix2d C = -D.transpose() * (AssB->ksi.i11 + AssA->ksi.i22) * D;
+Matrix3d W =  D * C.ldlt().solve(D.transpose());
+Vector2d b =  D.transpose() * (AssB->ksi.i10 - AssA->ksi.i20);
+Vector3d beta = D * C.ldlt().solve(b);
+AssB->T1 = W * AssB->ksi.i12 * T2 - W * AssA->ksi.i21 * T1 + beta;
+AssA->T2 = (-1) * AssB->T1;
+AssA->T1 = T1;
+AssB->T2 = T2;
+}
+
+void acc_force::disassemble() {
+
 }
