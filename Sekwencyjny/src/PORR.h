@@ -7,6 +7,8 @@
 //   Wybor na chwile obecna: lokalnie utworzony obiekt data_set z dynamiczna tablica
 //   (bo nie-const rozmiar) statycznie tworzonych obiektow 'data' (dynamiczna opcja
 //    z "new" zwraca blad Egiena - czemu?)
+// # acc_force::pierwszy arg. by val, bo error (czemu?)
+// # Assembly::Czemu const ref generuje blad fpermissive przy deklarowaniu wskaznika?
 
 #ifndef PORR_H_
 #define PORR_H_
@@ -156,11 +158,11 @@ class Assembly {
 public:
 	ksi_coef ksi;
 	Matrix3d S12;
-	const Assembly *AssA, *AssB;
 	Vector3d T1, T2;
+	Assembly *const AssA, *const AssB;
 
 	Assembly(const ksi_coef &_ksi, const Matrix3d &_S12);
-	Assembly(const Assembly &A, const Assembly &B);
+	Assembly( Assembly &A, /*const*/ Assembly &B);
 	void connect_base_body();
 	void disassemble();
 
@@ -175,9 +177,9 @@ public:
 	Vector3d Q1; // accumulated force at H1
 	Matrix3d S12;
 	Vector3d Q1art, Q2art; // acrticulated forces
-	const acc_force *AssA, *AssB;
+	acc_force *const AssA, *const AssB;
 	acc_force(Vector3d _Q1, const Matrix3d &_S12); // pierwszy arg. by val, bo error (czemu?)
-	acc_force(const acc_force &A, const acc_force &B);
+	acc_force(/*const*/ acc_force &A, /*const*/ acc_force &B);
 	void connect_base_body();
 	void disassemble();
 };

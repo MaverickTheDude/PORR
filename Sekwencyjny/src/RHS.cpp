@@ -81,13 +81,13 @@ Matrix<double, 3, Dynamic> set_forces_at_H1(data_set &datas, inputClass &input) 
 }
 
 Assembly::Assembly(const ksi_coef &_ksi, const Matrix3d &_S12)
-: ksi(_ksi), S12(_S12)  {
-	AssA = nullptr;
-	AssB = nullptr;
+: ksi(_ksi), S12(_S12), AssA(nullptr), AssB(nullptr) {
 	D << 1, 0, 0, 1, 0, 0;
 }
 
-Assembly::Assembly(const Assembly &A, const Assembly &B) {
+// Czemu const ref generuje blad fpermissive przy deklarowaniu wskaznika?
+Assembly::Assembly(/*const*/ Assembly &A, /*const*/ Assembly &B)
+	: AssA(&A), AssB(&B) {
 	D << 1, 0, 0, 1, 0, 0;
 	S12 = A.S12 * B.S12;
 	Matrix2d C  = - D.transpose() * (B.ksi.i11 + A.ksi.i22) * D;
@@ -101,23 +101,16 @@ Assembly::Assembly(const Assembly &A, const Assembly &B) {
 	ksi.i21 = -B.ksi.i21 * W * A.ksi.i21;
 	ksi.i10 =  A.ksi.i10 - A.ksi.i12 * beta;
 	ksi.i20 =  B.ksi.i20 + B.ksi.i21 * beta;
-
-	AssA = &A;
-	AssB = &B;
 }
 
 // pierwszy arg. by val, bo error (czemu?)
 acc_force::acc_force(Vector3d _Q1, const Matrix3d &_S12)
-	: Q1(_Q1), S12(_S12) {
-	AssA = nullptr;
-	AssB = nullptr;
-}
+	: Q1(_Q1), S12(_S12), AssA(nullptr), AssB(nullptr) { }
 
-acc_force::acc_force(const acc_force &A, const acc_force &B) {
+acc_force::acc_force( acc_force &A, /*const*/ acc_force &B)
+	: AssA(&A), AssB(&B) {
 	S12 = A.S12 * B.S12;
 	Q1 = A.Q1 + A.S12 * B.Q1;
-	AssA = &A;
-	AssB = &B;
 }
 
 void Assembly::connect_base_body() {
@@ -132,16 +125,19 @@ void acc_force::connect_base_body() {
 }
 
 void Assembly::disassemble() {
-Matrix2d C = -D.transpose() * (AssB->ksi.i11 + AssA->ksi.i22) * D;
-Matrix3d W =  D * C.ldlt().solve(D.transpose());
-Vector2d b =  D.transpose() * (AssB->ksi.i10 - AssA->ksi.i20);
-Vector3d beta = D * C.ldlt().solve(b);
-AssB->T1 = W * AssB->ksi.i12 * T2 - W * AssA->ksi.i21 * T1 + beta;
-AssA->T2 = (-1) * AssB->T1;
-AssA->T1 = T1;
-AssB->T2 = T2;
+	Matrix2d C = -D.transpose() * (AssB->ksi.i11 + AssA->ksi.i22) * D;
+	Matrix3d W =  D * C.ldlt().solve(D.transpose());
+	Vector2d b =  D.transpose() * (AssB->ksi.i10 - AssA->ksi.i20);
+	Vector3d beta = D * C.ldlt().solve(b);
+	AssB->T1 = W * AssB->ksi.i12 * T2 - W * AssA->ksi.i21 * T1 + beta;
+	AssA->T2 = (-1) * AssB->T1;
+	AssA->T1 = T1;
+	AssB->T2 = T2;
 }
 
 void acc_force::disassemble() {
-
+	AssB->Q1art =  AssB->Q1 - AssB->S12 * Q2art;
+	AssA->Q2art = -AssB->Q1art;
+	AssA->Q1art =  Q1art;
+	AssB->Q2art =  Q2art;
 }

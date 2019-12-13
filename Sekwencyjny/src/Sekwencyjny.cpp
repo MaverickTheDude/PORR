@@ -29,7 +29,6 @@ int main() {
 
 	Matrix<double, 3, Dynamic> Q1;
 	Q1 = set_forces_at_H1(datas, input);
-	std::cout << Q1 << endl;
 
 	std::vector<Assembly> base_assembly;
 	std::vector<acc_force> base_Qacc;
@@ -50,17 +49,23 @@ int main() {
 	AssemblyS.connect_base_body();
 	Qacc_S.connect_base_body();
 
-/*	//base body connection
-	Matrix2d c = - D.transpose() * AssemblyS.ksi.i11 * D;
-	Vector3d T1S = D * c.ldlt().solve(D.transpose()) * AssemblyS.ksi.i10;
+	AssemblyS.disassemble();
+	Qacc_S.disassemble();
 
-	std::cout << Qacc_S.Q1 << std::endl << Qacc_S.S12 << std::endl;
-	std::cout << c << std::endl << T1S << std::endl;
-	std::cout << "-----------" << endl;
-	std::cout << Qacc_S.Q1art << std::endl << Qacc_S.Q2art << std::endl;
-	std::cout << AssemblyS.T1 << std::endl << AssemblyS.T2 << std::endl;*/
+	AssemblyC.disassemble();
+	AssemblyD.disassemble();
+	Qacc_C.disassemble();
+	Qacc_D.disassemble();
 
-
+//	std::cout << base_assembly[0].T1 << std::endl << base_assembly[1].T2 << std::endl;
+//	std::cout << base_assembly[3].T1 << std::endl << base_assembly[2].T2 << std::endl;
+	std::cout << Qacc_C.Q1art << std::endl << Qacc_C.Q2art << std::endl;
+	std::cout << Qacc_D.Q1art << std::endl << Qacc_D.Q2art << std::endl;
+	std::cout << "---------------" << std::endl;
+	std::cout << std::endl << base_Qacc[0].Q1art << std::endl;
+	std::cout << std::endl << base_Qacc[1].Q1art << std::endl;
+	std::cout << std::endl << base_Qacc[2].Q1art << std::endl;
+	std::cout << std::endl << base_Qacc[3].Q1art << std::endl;
 
 	done();
 	return 0;
