@@ -49,7 +49,7 @@ void inputClass::v0_to_p0() {
 
 	data_set datas(N);
 	datas.set_S(q0, input);
-	datas.set_dS(q0, v0, input);
+	datas.set_dS(v0);
 	MatrixXd V1 = getVelocity(v0, datas);
 
 	// Baza indukcyjna dla ostatniego czlonu:

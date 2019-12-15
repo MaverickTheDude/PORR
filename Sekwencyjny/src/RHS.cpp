@@ -115,8 +115,8 @@ acc_force::acc_force( acc_force &A, /*const*/ acc_force &B)
 
 void Assembly::connect_base_body() {
 	Matrix2d c = - D.transpose() * ksi.i11 * D;
-	T1 = D * c.ldlt().solve(D.transpose()) * ksi.i10;
-	T2 << 0.0, 0.0, 0.0;
+	_T1 = D * c.ldlt().solve(D.transpose()) * ksi.i10;
+	_T2 << 0.0, 0.0, 0.0;
 }
 
 void acc_force::connect_base_body() {
@@ -129,10 +129,20 @@ void Assembly::disassemble() {
 	Matrix3d W =  D * C.ldlt().solve(D.transpose());
 	Vector2d b =  D.transpose() * (AssB->ksi.i10 - AssA->ksi.i20);
 	Vector3d beta = D * C.ldlt().solve(b);
-	AssB->T1 = W * AssB->ksi.i12 * T2 - W * AssA->ksi.i21 * T1 + beta;
-	AssA->T2 = (-1) * AssB->T1;
-	AssA->T1 = T1;
-	AssB->T2 = T2;
+	AssB->_T1 = W * AssB->ksi.i12 * _T2 - W * AssA->ksi.i21 * _T1 + beta;
+	AssA->_T2 = (-1) * AssB->_T1;
+	AssA->_T1 = _T1;
+	AssB->_T2 = _T2;
+}
+
+Vector3d Assembly::calculate_V1() {
+	Vector3d V1 = ksi.i11*_T1 + ksi.i12*_T2 + ksi.i10;
+	return V1;
+}
+
+Vector3d Assembly::calculate_V2() {
+	Vector3d V2 = ksi.i21*_T1 + ksi.i22*_T2 + ksi.i20;
+	return V2;
 }
 
 void acc_force::disassemble() {

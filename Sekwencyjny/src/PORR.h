@@ -114,7 +114,7 @@ public:
 	data_set(int e_n);
 	~data_set();
 	void set_S(const VectorXd &q, const inputClass &input);
-	void set_dS(const VectorXd &q, const VectorXd &dq, const inputClass &input);
+	void set_dS(const VectorXd &dq);
 };
 
 struct solution {
@@ -156,17 +156,21 @@ struct ksi_coef {
 
 class Assembly {
 public:
-	ksi_coef ksi;
-	Matrix3d S12;
-	Vector3d T1, T2;
-	Assembly *const AssA, *const AssB;
-
 	Assembly(const ksi_coef &_ksi, const Matrix3d &_S12);
 	Assembly( Assembly &A, /*const*/ Assembly &B);
 	void connect_base_body();
 	void disassemble();
+	Vector3d calculate_V1();
+	Vector3d calculate_V2();
+	Vector3d T1() const {return _T1;}
+	Vector3d T2() const {return _T2;}
 
 private:
+	ksi_coef ksi;
+	Matrix3d S12;
+	Vector3d _T1, _T2;
+	Assembly *const AssA, *const AssB;
+
 	// wersja nie-ogolna (rozwiazanie wygodniejsze)
 	const Vector3d H = Vector3d(0.0, 0.0, 1.0);
 	Matrix<double, 3, 2> D;
@@ -174,14 +178,16 @@ private:
 
 class acc_force {
 public:
-	Vector3d Q1; // accumulated force at H1
-	Matrix3d S12;
-	Vector3d Q1art, Q2art; // acrticulated forces
-	acc_force *const AssA, *const AssB;
 	acc_force(Vector3d _Q1, const Matrix3d &_S12); // pierwszy arg. by val, bo error (czemu?)
 	acc_force(/*const*/ acc_force &A, /*const*/ acc_force &B);
 	void connect_base_body();
 	void disassemble();
+
+private:
+	Vector3d Q1; // accumulated force at H1
+	Matrix3d S12;
+	Vector3d Q1art, Q2art; // acrticulated forces
+	acc_force *const AssA, *const AssB;
 };
 
 #endif /* PORR_H_ */

@@ -75,7 +75,7 @@ void data_set::set_S(const VectorXd &q, const inputClass &input) {
 	}
 }
 
-void data_set::set_dS(const VectorXd &q, const VectorXd &dq, const inputClass &input) {
+void data_set::set_dS(const VectorXd &dq) {
 	const VectorXd omega = get_abs_angles(dq);
 	for (int i = 0; i < n; i++) {
 		tab[i].set_dS(omega[i]);
@@ -86,7 +86,7 @@ MatrixXd getVelocity(const VectorXd &dq, const data_set &data) {
 	unsigned int Nbodies = dq.size();
 	MatrixXd V1(3, Nbodies);
 	V1.col(0) = data.tab[0].H() * dq(0);
-	for (int i = 1; i < Nbodies; i++) {
+	for (unsigned int i = 1; i < Nbodies; i++) {
 		V1.col(i) = data.tab[i-1].S12().transpose() * V1.col(i-1) +
 					data.tab[i].H() * dq(i);
 	}
