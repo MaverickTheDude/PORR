@@ -104,14 +104,6 @@ void trim(Matrix3d &mat, const double &eps) {
 	}
 }
 
-Matrix3d ksi_coef::g11() const {return i11;}
-Matrix3d ksi_coef::g12() const {return i12;}
-Matrix3d ksi_coef::g21() const {return i21;}
-Matrix3d ksi_coef::g22() const {return i22;}
-Vector3d ksi_coef::g10() const {return i10;}
-Vector3d ksi_coef::g20() const {return i20;}
-
-// to do: jedena ogolna metoda kopiujaca obiekt this i bedaca const
 void ksi_coef::print() const {
 	double eps = 1e-13;
 	Matrix3d ii11 = g11(); 		trim(ii11, eps);
@@ -120,10 +112,10 @@ void ksi_coef::print() const {
 	Matrix3d ii22 = g22(); 		trim(ii22, eps);
 	Vector3d ii10 = g10();
 	Vector3d ii20 = g20();
-	for(int i = 0; i < 3; i++)
+	for(int i = 0; i < 3; i++){
 		if (abs(ii10(i)) < eps) {ii10(i) = 0.0;}
-	for(int i = 0; i < 3; i++)
 		if (abs(ii20(i)) < eps) {ii20(i) = 0.0;}
+	}
 
 	std::cout << "ksi_11 \n" << i11 << std::endl << std::endl;
 	std::cout << "ksi_12 \n" << i12 << std::endl << std::endl;

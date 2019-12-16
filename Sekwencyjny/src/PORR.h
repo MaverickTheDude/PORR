@@ -136,7 +136,7 @@ VectorXd get_abs_angles(const VectorXd &q0);
 MatrixXd getVelocity(const VectorXd &dq, const data_set &data);
 Vector3d P1(const double &p, const Ref<VectorXd> &sig, const data &ith_data);
 VectorXd v0_to_p0(const VectorXd &q0, const VectorXd &v0, const inputClass &input);
-Matrix<double, 3, Dynamic> set_forces_at_H1(data_set &datas, inputClass &input);
+MatrixXd set_forces_at_H1(const data_set &datas, const inputClass &input);
 
 struct ksi_coef {
 	Matrix3d i11, i12, i21, i22;
@@ -145,12 +145,12 @@ struct ksi_coef {
 	ksi_coef(const ksi_coef &_ksi);
 	ksi_coef();
 	bool check_if_ok() const;
-	Matrix3d g11() const;
-	Matrix3d g12() const;
-	Matrix3d g21() const;
-	Matrix3d g22() const;
-	Vector3d g10() const;
-	Vector3d g20() const;
+	Matrix3d g11() const {return i11;}
+	Matrix3d g12() const {return i12;}
+	Matrix3d g21() const {return i21;}
+	Matrix3d g22() const {return i22;}
+	Vector3d g10() const {return i10;}
+	Vector3d g20() const {return i20;}
 	void print() const;
 };
 
@@ -182,11 +182,13 @@ public:
 	acc_force(/*const*/ acc_force &A, /*const*/ acc_force &B);
 	void connect_base_body();
 	void disassemble();
+	Vector3d Q1art() const {return _Q1art;}
+	Vector3d Q2art() const {return _Q2art;}
 
 private:
 	Vector3d Q1; // accumulated force at H1
 	Matrix3d S12;
-	Vector3d Q1art, Q2art; // acrticulated forces
+	Vector3d _Q1art, _Q2art; // acrticulated forces
 	acc_force *const AssA, *const AssB;
 };
 

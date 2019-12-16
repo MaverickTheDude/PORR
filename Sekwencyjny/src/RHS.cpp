@@ -4,27 +4,80 @@ using std::cout;
 using std::endl;
 
 VectorXd RHS(const double t, const VectorXd &Y, const inputClass &input) {
-	const unsigned int n = Y.size() / 2;
-	const VectorXd p = Y.head(n);
-	const VectorXd q = Y.tail(n);
+	const VectorXd p = Y.head(input.Nbodies);
+	const VectorXd q = Y.tail(input.Nbodies);
+	VectorXd dq(input.Nbodies), dp(input.Nbodies);
+	Vector3d H = Vector3d(0.0, 0.0, 1.0);
 
-	data_set datas = data_set(n);
+	data_set datas = data_set(input.Nbodies);
 	datas.set_S(q, input);
 
-	//	Wyznacz wspolczynniki dla wszystkich czlonow
+	//	Wspolczynniki calkowego rownania ruchu
 	std::vector<ksi_coef> ksi;
 	ksi.reserve(input.Nbodies);
 	for (int i = 0; i < input.Nbodies; i++) {
 		ksi.emplace_back(p, datas, i);
 	}
 
-	//	Assembly phase
+	//	Assembly - disassemlby phase
+	MatrixXd Q1(3, input.Nbodies);
+	Q1 = set_forces_at_H1(datas, input);
 
+	std::vector<Assembly> base_assembly;
+	std::vector<acc_force> base_Qacc;
+	base_assembly.reserve(input.Nbodies);
+	base_Qacc.reserve(input.Nbodies);
+	for (int i = 0; i < input.tiers_info[0]; i++) {
+		base_assembly.emplace_back(ksi[i], datas.tab[i].S12());
+		base_Qacc.emplace_back(Q1.col(i), datas.tab[i].S12());
+	}
 
-	double pi = M_PI;
-	VectorXd dY(2*n);
-	dY << sin(2*pi*t), cos(2*pi/2*t), sin(2*pi*t), cos(2*pi/2*t);
+	Assembly AssemblyC = Assembly(base_assembly[0], base_assembly[1]);
+	acc_force Qacc_C = acc_force(base_Qacc[0], base_Qacc[1]);
+	Assembly AssemblyD = Assembly(base_assembly[2], base_assembly[3]);
+	acc_force Qacc_D = acc_force(base_Qacc[2], base_Qacc[3]);
+	Assembly AssemblyS = Assembly(AssemblyC, AssemblyD);
+	acc_force Qacc_S = acc_force(Qacc_C, Qacc_D);
 
+	AssemblyS.connect_base_body();
+	Qacc_S.connect_base_body();
+
+	AssemblyS.disassemble();
+	Qacc_S.disassemble();
+
+	AssemblyC.disassemble();
+	AssemblyD.disassemble();
+	Qacc_C.disassemble();
+	Qacc_D.disassemble();
+
+	// velocity calculation
+	MatrixXd P1art(3,input.Nbodies);
+	dq(0) = H.transpose() * base_assembly[0].calculate_V1();
+	P1art.col(0) = base_assembly[0].T1() + H*p(0);
+
+	for (int i = 1; i < input.tiers_info[0]; i++) {
+		Vector3d V1B = base_assembly[i].calculate_V1();
+		Vector3d V2A = base_assembly[i-1].calculate_V2();
+		dq(i) = H.transpose() * (V1B - V2A);
+		P1art.col(i) = base_assembly[i].T1() + H*p(i);
+	}
+	datas.set_dS(dq);
+
+	// Momenta calculation
+	MatrixXd des(3,input.Nbodies);
+	des.rightCols(1) << 0, 0, 0;
+	for (int i = input.Nbodies - 2; i >= 0; i--) {
+		des.col(i) =  (datas.tab[i].dSc2() - datas.tab[i+1].dSc1()) * P1art.col(i+1)
+					  + des.col(i+1);
+	}
+
+	for (int i = 0; i < input.Nbodies; i++) {
+		dp(i) = H.transpose() * (des.col(i) +
+				base_Qacc[i].Q1art() - datas.tab[i].dSc1()*P1art.col(i) );
+	}
+
+	VectorXd dY(2*input.Nbodies);
+	dY << dp, dq;
 	return dY;
 }
 
@@ -68,7 +121,7 @@ ksi_coef::ksi_coef(const ksi_coef &_ksi) {
 	i20 = _ksi.i20;
 }
 
-Matrix<double, 3, Dynamic> set_forces_at_H1(data_set &datas, inputClass &input) {
+MatrixXd set_forces_at_H1(const data_set &datas, const inputClass &input) {
 	const double g = 9.80665;
 	MatrixXd Q1(3, input.Nbodies);
 	Vector3d F = Vector3d(0.0, 0.0, 0.0);
@@ -120,8 +173,8 @@ void Assembly::connect_base_body() {
 }
 
 void acc_force::connect_base_body() {
-	Q1art = Q1;
-	Q2art << 0.0, 0.0, 0.0;
+	_Q1art = Q1;
+	_Q2art << 0.0, 0.0, 0.0;
 }
 
 void Assembly::disassemble() {
@@ -146,8 +199,8 @@ Vector3d Assembly::calculate_V2() {
 }
 
 void acc_force::disassemble() {
-	AssB->Q1art =  AssB->Q1 - AssB->S12 * Q2art;
-	AssA->Q2art = -AssB->Q1art;
-	AssA->Q1art =  Q1art;
-	AssB->Q2art =  Q2art;
+	AssB->_Q1art =  AssB->Q1 - AssB->S12 * _Q2art;
+	AssA->_Q2art = -AssB->_Q1art;
+	AssA->_Q1art =  _Q1art;
+	AssB->_Q2art =  _Q2art;
 }
