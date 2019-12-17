@@ -5,7 +5,7 @@ using std::cout;
 using std::endl;
 
 IOFormat exportFmt(FullPrecision, 0, " ", "\n", "", "", "", "");
-
+double* times = nullptr;
 int main() {
 	// STREFA WARUNKOW POCZATKOWYCH
 	const int Nbodies = 4;
@@ -15,8 +15,18 @@ int main() {
 	inputClass input(Nbodies, q0, v0);
 
 	// OBLICZENIA
+	times = new double[input.N];
 	solution sol = RK_solver(input);
 
+	double total_time = 0.0;
+	for (int i = 0; i < input.N; i++) {
+		total_time += times[i];
+		std::cout << "time[" << i << "]: " << times[i] << endl;
+	}
+
+	std::cout << "\n\nTotal time: " << total_time << std::endl;
+
+	delete [] times;
 	if (sol.stopped) {
 		cout << " PROBLEM!" << endl << sol.error_messege << endl;
 		return 1;

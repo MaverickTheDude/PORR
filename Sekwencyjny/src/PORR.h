@@ -19,6 +19,7 @@
 #include <Eigen/Dense>
 #include <vector>
 #include <ctime>
+#include <time.h>
 using namespace Eigen;
 
 Matrix2d Rot(double fi);
