@@ -13,17 +13,19 @@ VectorXd RHS(const double t, const VectorXd &Y, const inputClass &input) {
 	data_set datas = data_set(input.Nbodies);
 	datas.set_S(q, input);
 
-	//	Wspolczynniki calkowego rownania ruchu
+	//--- Wspolczynniki calkowego rownania ruchu
 	std::vector<ksi_coef> ksi;
 	ksi.reserve(input.Nbodies);
 	for (int i = 0; i < input.Nbodies; i++) {
 		ksi.emplace_back(p, datas, i);
 	}
 
-	//	Assembly - disassemlby phase
+	//Assembly - disassemlby phase
+
 	MatrixXd Q1(3, input.Nbodies);
 	Q1 = set_forces_at_H1(datas, input);
 
+	//--- Pierwsza galaz drzewa binarnego
 	std::vector<Assembly> base_assembly;
 	std::vector<acc_force> base_Qacc;
 	base_assembly.reserve(input.Nbodies);
@@ -42,53 +44,33 @@ VectorXd RHS(const double t, const VectorXd &Y, const inputClass &input) {
 	tree.push_back(base_assembly);
 	Q_tree.push_back(base_Qacc);
 
+	//--- Rekursja od lisci do korzenia
 	for (unsigned int i = 1; i < tiers; i++) {
 		std::vector<Assembly> 	 branch;
 		std::vector<acc_force> Q_branch;
 		branch.reserve(input.tiers_info[i]);
 		Q_branch.reserve(input.tiers_info[i]);
 
-		// note: tiers_info[i-1] bo kurwa co?
-//		const int end_of_branch = input.tiers_info[i] % 2 == 0 ?
-//				input.tiers_info[i]-1 : input.tiers_info[i]-2;
 		const int end_of_branch = input.tiers_info[i-1] - 1;
 
 		std::cout << "TIERS INFO[" << i << "]: " << input.tiers_info[i] << std::endl;
 		std::cout << "END OF BRANCH " << end_of_branch << std::endl;
-		int tmp_i = 0;
 		for (int j = 0; j < end_of_branch; j+=2) {
 			branch.emplace_back(tree[i-1][j], tree[i-1][j+1]);
 			Q_branch.emplace_back(Q_tree[i-1][j], Q_tree[i-1][j+1]);
-//			branch[tmp_i].ksi.print();
-//			std::cout << "Q1acc: " << Q_branch[tmp_i].Q1 << std::endl;
-			tmp_i++;
 		}
-		if (input.tiers_info[i] % 2 == 1) {
+		// Nieparzysta liczba czlonow w galezi powyzej
+		if (input.tiers_info[i-1] % 2 == 1) {
+			// To do: stosowny konstruktor kopiujacy
 			branch.emplace_back(tree[i-1].back()); // back() - ostatni element wektora
 			Q_branch.emplace_back(Q_tree[i-1].back());
-			std::cout << "dUPA, tu mnie nie ma";
+			std::cout << "galaz powyzej zawiera nieparzysta liczbe elementow";
 		}
 		tree.push_back(branch);
 		Q_tree.push_back(Q_branch);
 	}
 
-/*	Assembly AssemblyC = Assembly(base_assembly[0], base_assembly[1]);
-	acc_force Qacc_C = acc_force(base_Qacc[0], base_Qacc[1]);
-	Assembly AssemblyD = Assembly(base_assembly[2], base_assembly[3]);
-	acc_force Qacc_D = acc_force(base_Qacc[2], base_Qacc[3]);
-	Assembly AssemblyS = Assembly(AssemblyC, AssemblyD);
-	acc_force Qacc_S = acc_force(Qacc_C, Qacc_D);
-
-	AssemblyS.connect_base_body();
-	Qacc_S.connect_base_body();
-	*/
-
-//	std::cout << "KSI C: \n\n";
-//	tree[tiers-1][0].ksi.print();
-
-//	std::cout << "KSI D: \n\n";
-//	tree[tiers-1][1].ksi.print();
-
+	//--- Base body connection
 	Assembly AssemblyS = Assembly(tree[tiers-1][0], tree[tiers-1][1]);
 	acc_force Q_AssemblyS = acc_force(Q_tree[tiers-1][0], Q_tree[tiers-1][1]);
 	AssemblyS.connect_base_body();
@@ -96,78 +78,21 @@ VectorXd RHS(const double t, const VectorXd &Y, const inputClass &input) {
 	Q_AssemblyS.connect_base_body();
 	Q_AssemblyS.disassemble();
 
-/*	std::cout << "KSI S: \n\n";
-	AssemblyS.ksi.print();
-	std::cout <<"\n\nT1 = " << AssemblyS.T1() << std::endl
-			  <<    "T2 = " << AssemblyS.T2() << "\n\n --- \n";
-
-	std::cout << "T1_A = " << AssemblyS.AssA->T1() << std::endl;
-	std::cout << "T2_B = " << AssemblyS.AssA->T2() << std::endl;
-	std::cout << "T1_C = " << AssemblyS.AssB->T1() << std::endl;
-	std::cout << "T2_D = " << AssemblyS.AssB->T2() << std::endl;
-	std::cout << "--------------" << std::endl;
-	std::cout << "T1_A = " << tree[1][0].T1() << std::endl;
-	std::cout << "T2_B = " << tree[1][0].T2() << std::endl;
-	std::cout << "T1_C = " << tree[1][1].T1() << std::endl;
-	std::cout << "T2_D = " << tree[1][1].T2() << std::endl;*/
-
-//	std::cout << "Q1artS = " << Q_AssemblyS.Q1art() << std::endl;
-//	std::cout << "Q2artS = " << Q_AssemblyS.Q2art() << std::endl;
-
+	//--- Disassembly
 	for (int i = tiers-1; i > 0; i--) {
 		const int end_of_branch = input.tiers_info[i-1] % 2 == 0 ?
 				input.tiers_info[i] : input.tiers_info[i]-1;
 
-//		std::cout << "EOB = " << end_of_branch << std::endl;
 		for (int j = 0; j < end_of_branch; j++) {
-/*			std::cout << "disasembly, j = " << j << std::endl;
-			std::cout <<"\n\nT1 = " << tree[i][j].T1() << std::endl
-					  <<    "T2 = " << tree[i][j].T2() << std::endl;
-			std::cout << "Q1art = " << Q_tree[i][j].Q1art() << std::endl;
-			std::cout << "Q2art = " << Q_tree[i][j].Q2art() << std::endl;*/
-
-//			if (j==1) {
-//				tree[i][j].AssA->ksi.print();
-//				tree[i][j].AssB->ksi.print();
-//				std::cout <<"\n\nT1 = " << tree[i][j].T1() << std::endl
-//						  <<    "T2 = " << tree[i][j].T2() << std::endl << std::endl;
-//			}
-
-//			std::cout << "T2_1 = " << tree[i][j].AssA->T2() << std::endl;
-//			std::cout << "T2_2 = " << tree[0][2].T2() << std::endl;
-//			std::cout << "T1_1 = " << tree[i][j].AssA->T1() << std::endl;
-//			std::cout << "T1_2 = " << tree[0][2].T1() << std::endl;
-
 			tree[i].at(j).disassemble();
-//			std::cout << "T2_1 = " << tree[i][j].AssA->T2() << std::endl;
-//			std::cout << "T2_2 = " << tree[0][2].T2() << std::endl;
-//			std::cout << "T1_1 = " << tree[i][j].AssA->T1() << std::endl;
-//			std::cout << "T1_2 = " << tree[0][2].T1() << std::endl;
 			Q_tree[i][j].disassemble();
 		}
 		if (input.tiers_info[i-1] % 2 == 1) {
-			// Nothing to do here
+			// To do: nieparzysta liczba czlonow
 		}
 	}
 
-	std::cout << tree[0][0].T1() << std::endl << tree[0][1].T2() << std::endl;
-	std::cout << tree[0][3].T1() << std::endl << tree[0][2].T2() << std::endl;
-	std::cout << "---------------" << std::endl;
-	std::cout << std::endl << Q_tree[0][0].Q1art() << std::endl;
-	std::cout << std::endl << Q_tree[0][1].Q1art() << std::endl;
-	std::cout << std::endl << Q_tree[0][2].Q1art() << std::endl;
-	std::cout << std::endl << Q_tree[0][3].Q1art() << std::endl;
-
-
-/*	AssemblyS.disassemble();
-	Qacc_S.disassemble();
-
-	AssemblyC.disassemble();
-	AssemblyD.disassemble();
-	Qacc_C.disassemble();
-	Qacc_D.disassemble();*/
-
-	// velocity calculation
+	//--- velocity calculation
 	MatrixXd P1art(3,input.Nbodies);
 	dq(0) = H.transpose() * tree[0][0].calculate_V1();
 	P1art.col(0) = tree[0][0].T1() + H*p(0);

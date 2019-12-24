@@ -8,10 +8,10 @@ IOFormat exportFmt(FullPrecision, 0, " ", "\n", "", "", "", "");
 double* times = nullptr;
 int main() {
 	// STREFA WARUNKOW POCZATKOWYCH
-	const int Nbodies = 4;
+	const int Nbodies = 8;
 	VectorXd q0(Nbodies), v0(Nbodies);
-	q0 << 0.0, -M_PI/4, 0.0, M_PI/4;
-	v0 << -1.0, 2.0, 0.0, 0.5;
+	q0 << 0.0, -M_PI/4, 0.0, M_PI/4, 0.0, 0.0, 0.0, 0.0;
+	v0 << -1.0, 2.0, 0.0, 0.5, 0.0, 0.0, 0.0, 0.0;
 	inputClass input(Nbodies, q0, v0);
 
 	// OBLICZENIA
