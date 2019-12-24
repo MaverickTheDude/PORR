@@ -159,16 +159,17 @@ class Assembly {
 public:
 	Assembly(const ksi_coef &_ksi, const Matrix3d &_S12);
 	Assembly(Assembly &A, /*const*/ Assembly &B);
-	Assembly(const Assembly &A);
+	Assembly(Assembly &A);
 	void connect_base_body();
-	void disassemble();
+	void disassemble() const;
+	void move_up();
 	Vector3d calculate_V1();
 	Vector3d calculate_V2();
 	Vector3d T1() const {return _T1;}
 	Vector3d T2() const {return _T2;}
 
-private:
 	ksi_coef ksi;
+private:
 	Matrix3d S12;
 	Vector3d _T1, _T2;
 	Assembly *const AssA, *const AssB;
@@ -182,9 +183,10 @@ class acc_force {
 public:
 	acc_force(Vector3d _Q1, const Matrix3d &_S12); // pierwszy arg. by val, bo error (czemu?)
 	acc_force(/*const*/ acc_force &A, /*const*/ acc_force &B);
-	acc_force(const acc_force &A);
+	acc_force(acc_force &A);
 	void connect_base_body();
 	void disassemble();
+	void move_up();
 	Vector3d Q1art() const {return _Q1art;}
 	Vector3d Q2art() const {return _Q2art;}
 
