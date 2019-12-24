@@ -46,7 +46,7 @@ class inputClass {
 	const double L = 0.4;
 	const double m = 0.5;
 	const double dt = 0.02;
-	const double Tk = 1.0;
+	const double Tk = 1;
 	VectorXd _p0;
 	void v0_to_p0();
 
@@ -158,7 +158,8 @@ struct ksi_coef {
 class Assembly {
 public:
 	Assembly(const ksi_coef &_ksi, const Matrix3d &_S12);
-	Assembly( Assembly &A, /*const*/ Assembly &B);
+	Assembly(Assembly &A, /*const*/ Assembly &B);
+	Assembly(const Assembly &A);
 	void connect_base_body();
 	void disassemble();
 	Vector3d calculate_V1();
@@ -181,6 +182,7 @@ class acc_force {
 public:
 	acc_force(Vector3d _Q1, const Matrix3d &_S12); // pierwszy arg. by val, bo error (czemu?)
 	acc_force(/*const*/ acc_force &A, /*const*/ acc_force &B);
+	acc_force(const acc_force &A);
 	void connect_base_body();
 	void disassemble();
 	Vector3d Q1art() const {return _Q1art;}

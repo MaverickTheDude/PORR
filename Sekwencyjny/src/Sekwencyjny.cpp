@@ -19,10 +19,10 @@ int main() {
 	solution sol = RK_solver(input);
 
 	double total_time = 0.0;
-	for (int i = 0; i < input.N; i++) {
+/*	for (int i = 0; i < input.N; i++) {
 		total_time += times[i];
 		std::cout << "time[" << i << "]: " << times[i] << endl;
-	}
+	}*/
 
 	std::cout << "\n\nTotal time: " << total_time << std::endl;
 
