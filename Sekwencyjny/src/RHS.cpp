@@ -4,7 +4,6 @@ using std::cout;
 using std::endl;
 
 VectorXd RHS(const double t, const VectorXd &Y, const inputClass &input) {
-	std::cout << "t = " << t << std::endl;
 	const VectorXd p = Y.head(input.Nbodies);
 	const VectorXd q = Y.tail(input.Nbodies);
 	VectorXd dq(input.Nbodies), dp(input.Nbodies);
@@ -36,7 +35,6 @@ VectorXd RHS(const double t, const VectorXd &Y, const inputClass &input) {
 	}
 
 	const unsigned int tiers = input.tiers-1;	// ostatnie pietro definiujemy recznie
-	std::cout << "tiers = " << tiers << std::endl;
 	std::vector< std::vector<Assembly> > tree;
 	std::vector< std::vector<acc_force> > Q_tree;
 	tree.reserve(tiers);
@@ -53,8 +51,6 @@ VectorXd RHS(const double t, const VectorXd &Y, const inputClass &input) {
 
 		const int end_of_branch = input.tiers_info[i-1] - 1;
 
-		std::cout << "TIERS INFO[" << i << "]: " << input.tiers_info[i] << std::endl;
-		std::cout << "END OF BRANCH " << end_of_branch << std::endl;
 		for (int j = 0; j < end_of_branch; j+=2) {
 			branch.emplace_back(tree[i-1][j], tree[i-1][j+1]);
 			Q_branch.emplace_back(Q_tree[i-1][j], Q_tree[i-1][j+1]);
@@ -64,7 +60,7 @@ VectorXd RHS(const double t, const VectorXd &Y, const inputClass &input) {
 			// To do: stosowny konstruktor kopiujacy
 			branch.emplace_back(tree[i-1].back()); // back() - ostatni element wektora
 			Q_branch.emplace_back(Q_tree[i-1].back());
-			std::cout << "galaz powyzej zawiera nieparzysta liczbe elementow";
+			std::cout << "galaz powyzej zawiera nieparzysta liczbe elementow" << endl << endl;
 		}
 		tree.push_back(branch);
 		Q_tree.push_back(Q_branch);
@@ -88,7 +84,12 @@ VectorXd RHS(const double t, const VectorXd &Y, const inputClass &input) {
 			Q_tree[i][j].disassemble();
 		}
 		if (input.tiers_info[i-1] % 2 == 1) {
-			// To do: nieparzysta liczba czlonow
+			tree[i-1].back().set(tree[i].back());
+			Q_tree[i-1].back().set(Q_tree[i].back());
+			cout << "disassembly: galaz powyzej zawiera nieparzysta liczbe elementow" << endl << endl;
+			cout << tree[i-1].back().D << endl;
+			cout << tree[i-1].back().ksi.i11 << endl;
+			cout << tree[i-1].back().ksi.i10 << endl;
 		}
 	}
 
@@ -180,8 +181,8 @@ Assembly::Assembly(const ksi_coef &_ksi, const Matrix3d &_S12)
 	D << 1, 0, 0, 1, 0, 0;
 }
 
-// Czemu const ref generuje blad fpermissive przy deklarowaniu wskaznika?
-Assembly::Assembly(/*const*/ Assembly &A, /*const*/ Assembly &B)
+// const ref generuje blad fpermissive przy deklarowaniu wskaznika (mozliwosc pozniejszej zmiany)
+Assembly::Assembly(Assembly &A, Assembly &B)
 	: AssA(&A), AssB(&B) {
 	D << 1, 0, 0, 1, 0, 0;
 	S12 = A.S12 * B.S12;
@@ -198,10 +199,12 @@ Assembly::Assembly(/*const*/ Assembly &A, /*const*/ Assembly &B)
 	ksi.i20 =  B.ksi.i20 + B.ksi.i21 * beta;
 }
 
+// wskazniki przy konstruktorze kopiujacym nie sa wykorzystywane
+// Zadanie przejete przez metode set
+// Zadeklarowano konstruktor kopiujacy (dokladny, tj. const Assembly&), poniewaz
+// stl nie przyjmuje wersji bez const przy zapelnianiu vectora
 Assembly::Assembly(const Assembly &A)
-	: ksi(A.ksi), S12(A.S12), AssA(A.AssA), AssB(A.AssB) {
-	D << 1, 0, 0, 1, 0, 0;
-}
+	: ksi(A.ksi), S12(A.S12), AssA(A.AssA), AssB(A.AssB), D(A.D) { }
 
 acc_force::acc_force(const acc_force &A)
 	: Q1(A.Q1), S12(A.S12), AssA(A.AssA), AssB(A.AssB) { }
@@ -210,7 +213,7 @@ acc_force::acc_force(const acc_force &A)
 acc_force::acc_force(Vector3d _Q1, const Matrix3d &_S12)
 	: Q1(_Q1), S12(_S12), AssA(nullptr), AssB(nullptr) { }
 
-acc_force::acc_force( acc_force &A, /*const*/ acc_force &B)
+acc_force::acc_force( acc_force &A, acc_force &B)
 	: AssA(&A), AssB(&B) {
 	S12 = A.S12 * B.S12;
 	Q1 = A.Q1 + A.S12 * B.Q1;
@@ -233,20 +236,6 @@ void Assembly::disassemble() {
 	Vector2d b =  D.transpose() * (AssB->ksi.i10 - AssA->ksi.i20);
 	Vector3d beta = D * C.ldlt().solve(b);
 
-/*
-	std::cout << "disasembly:: \n\n";
-	std::cout << "D.transpose() = " << D.transpose() << "\n\n";
-	std::cout << "AssB->ksi.i11 + AssA->ksi.i22 = " << AssB->ksi.i11 + AssA->ksi.i22 << "\n\n";
-	std::cout << "AssB->ksi.i11 = " << AssB->ksi.i11 << "\n\n";
-	std::cout << "AssA->ksi.i22 = " << AssA->ksi.i22 << "\n\n";
-	std::cout << "D.transpose() * (AssB->ksi.i11 + AssA->ksi.i22) = " << D.transpose() * (AssB->ksi.i11 + AssA->ksi.i22) << "\n\n";
-//	std::cout << "CinvD = " << C.ldlt().solve(D.transpose()) << "\n\n";
-//	std::cout << "W = " << W << "\n\n";
-//	std::cout << "beta = " << beta << "\n\n";
-//	std::cout << "T1 = " << _T1 << "\n\n";
-//	std::cout << "T2 = " << _T2 << "\n\n";
-	std::cout << "---disasembly \n\n";*/
-
 	AssB->_T1 = W * AssB->ksi.i12 * _T2 - W * AssA->ksi.i21 * _T1 + beta;
 	AssA->_T2 = (-1) * AssB->_T1;
 	AssA->_T1 = _T1;
@@ -268,4 +257,14 @@ void acc_force::disassemble() {
 	AssA->_Q2art = -AssB->_Q1art;
 	AssA->_Q1art =  _Q1art;
 	AssB->_Q2art =  _Q2art;
+}
+
+void Assembly::set(const Assembly &A) {
+	_T1 = A._T1;
+	_T2 = A._T2;
+}
+
+void acc_force::set(const acc_force &A) {
+	_Q1art = A._Q1art;
+	_Q2art = A._Q2art;
 }

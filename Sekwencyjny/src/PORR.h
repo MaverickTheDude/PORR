@@ -158,7 +158,7 @@ struct ksi_coef {
 class Assembly {
 public:
 	Assembly(const ksi_coef &_ksi, const Matrix3d &_S12);
-	Assembly(Assembly &A, /*const*/ Assembly &B);
+	Assembly(Assembly &A, Assembly &B);
 	Assembly(const Assembly &A);
 	void connect_base_body();
 	void disassemble();
@@ -166,8 +166,9 @@ public:
 	Vector3d calculate_V2();
 	Vector3d T1() const {return _T1;}
 	Vector3d T2() const {return _T2;}
+	void set(const Assembly &A);
 
-private:
+//private:
 	ksi_coef ksi;
 	Matrix3d S12;
 	Vector3d _T1, _T2;
@@ -181,12 +182,13 @@ private:
 class acc_force {
 public:
 	acc_force(Vector3d _Q1, const Matrix3d &_S12); // pierwszy arg. by val, bo error (czemu?)
-	acc_force(/*const*/ acc_force &A, /*const*/ acc_force &B);
+	acc_force(acc_force &A, acc_force &B);
 	acc_force(const acc_force &A);
 	void connect_base_body();
 	void disassemble();
 	Vector3d Q1art() const {return _Q1art;}
 	Vector3d Q2art() const {return _Q2art;}
+	void set(const acc_force &A);
 
 private:
 	Vector3d Q1; // accumulated force at H1
