@@ -87,9 +87,6 @@ VectorXd RHS(const double t, const VectorXd &Y, const inputClass &input) {
 			tree[i-1].back().set(tree[i].back());
 			Q_tree[i-1].back().set(Q_tree[i].back());
 			cout << "disassembly: galaz powyzej zawiera nieparzysta liczbe elementow" << endl << endl;
-			cout << tree[i-1].back().D << endl;
-			cout << tree[i-1].back().ksi.i11 << endl;
-			cout << tree[i-1].back().ksi.i10 << endl;
 		}
 	}
 

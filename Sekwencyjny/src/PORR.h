@@ -45,8 +45,8 @@ class inputClass {
 	// parametry do ustawienia:
 	const double L = 0.4;
 	const double m = 0.5;
-	const double dt = 0.02;
-	const double Tk = 1;
+	const double dt = 0.01;
+	const double Tk = 0.01;
 	VectorXd _p0;
 	void v0_to_p0();
 
@@ -159,6 +159,7 @@ class Assembly {
 public:
 	Assembly(const ksi_coef &_ksi, const Matrix3d &_S12);
 	Assembly(Assembly &A, Assembly &B);
+//	Assembly(Assembly&&) noexcept; <- move constructor nie dziala bo psuje const-corectness stl'a
 	Assembly(const Assembly &A);
 	void connect_base_body();
 	void disassemble();
@@ -168,7 +169,7 @@ public:
 	Vector3d T2() const {return _T2;}
 	void set(const Assembly &A);
 
-//private:
+private:
 	ksi_coef ksi;
 	Matrix3d S12;
 	Vector3d _T1, _T2;
@@ -183,6 +184,7 @@ class acc_force {
 public:
 	acc_force(Vector3d _Q1, const Matrix3d &_S12); // pierwszy arg. by val, bo error (czemu?)
 	acc_force(acc_force &A, acc_force &B);
+//	acc_force(acc_force&&) noexcept; <- move constructor nie dziala bo psuje const-corectness stl'a
 	acc_force(const acc_force &A);
 	void connect_base_body();
 	void disassemble();
