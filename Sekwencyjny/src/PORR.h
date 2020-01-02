@@ -1,6 +1,5 @@
 // # question 1: czemu musze deklarowac friendship pomiedzy obiema
 //   klasami do zadeklarowania body wewnatrz input?
-//	 Czy da sie to zrobic inaczej, niz przez friendship?
 // # Jaka jest roznica miedzy {} a () w liscie inicjalizacyjnej?
 // # obiekt klasy data_set lepiej dac wewnatrz RHS(), czy przed petla RK_ode()?
 //   Lepiej zrobic dynamiczna tablice dynamicznych obiektow data, czy wektor?
@@ -8,7 +7,7 @@
 //   (bo nie-const rozmiar) statycznie tworzonych obiektow 'data' (dynamiczna opcja
 //    z "new" zwraca blad Egiena - czemu?)
 // # acc_force::pierwszy arg. by val, bo error (czemu?)
-// # Assembly::Czemu const ref generuje blad fpermissive przy deklarowaniu wskaznika?
+// # zlosliwe const-correctness na przykladzie wskaznika *AsmA, *AsmB
 
 #ifndef PORR_H_
 #define PORR_H_
@@ -19,6 +18,7 @@
 #include <Eigen/Dense>
 #include <vector>
 #include <ctime>
+#include <omp.h>
 #include <time.h>
 using namespace Eigen;
 
@@ -45,8 +45,8 @@ class inputClass {
 	// parametry do ustawienia:
 	const double L = 0.4;
 	const double m = 0.5;
-	const double dt = 0.01;
-	const double Tk = 0.01;
+	const double dt = 0.02;
+	const double Tk = 1;
 	VectorXd _p0;
 	void v0_to_p0();
 
@@ -157,7 +157,9 @@ struct ksi_coef {
 
 class Assembly {
 public:
+	Assembly();
 	Assembly(const ksi_coef &_ksi, const Matrix3d &_S12);
+	Assembly& operator=(const Assembly&);
 	Assembly(Assembly &A, Assembly &B);
 //	Assembly(Assembly&&) noexcept; <- move constructor nie dziala bo psuje const-corectness stl'a
 	Assembly(const Assembly &A);
@@ -169,20 +171,24 @@ public:
 	Vector3d T2() const {return _T2;}
 	void set(const Assembly &A);
 
-private:
 	ksi_coef ksi;
+//private:
 	Matrix3d S12;
 	Vector3d _T1, _T2;
-	Assembly *const AssA, *const AssB;
+	// const corectness tutaj przeszkadza. Jak zachowac const-pointer
+	// i zdefiniowac operator=? (potrzebny do funkcji std::copy)
+	Assembly */*const*/ AssA, */*const*/ AssB;
 
 	// wersja nie-ogolna (rozwiazanie wygodniejsze)
-	const Vector3d H = Vector3d(0.0, 0.0, 1.0);
+	/*const*/ Vector3d H = Vector3d(0.0, 0.0, 1.0);
 	Matrix<double, 3, 2> D;
 };
 
 class acc_force {
 public:
+	acc_force();
 	acc_force(Vector3d _Q1, const Matrix3d &_S12); // pierwszy arg. by val, bo error (czemu?)
+	acc_force& operator=(const acc_force&);
 	acc_force(acc_force &A, acc_force &B);
 //	acc_force(acc_force&&) noexcept; <- move constructor nie dziala bo psuje const-corectness stl'a
 	acc_force(const acc_force &A);
@@ -196,7 +202,7 @@ private:
 	Vector3d Q1; // accumulated force at H1
 	Matrix3d S12;
 	Vector3d _Q1art, _Q2art; // acrticulated forces
-	acc_force *const AssA, *const AssB;
+	acc_force */*const*/ AssA, */*const*/ AssB;
 };
 
 #endif /* PORR_H_ */

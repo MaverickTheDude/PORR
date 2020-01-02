@@ -99,14 +99,22 @@ Vector3d P1(const double &p, const Ref<VectorXd> &sig, const data &ith_data) {
 
 void trim(Matrix3d &mat, const double &eps) {
 	for (int i = 0; i < 3; i++) {
-		for (int j = 0; j < 3; j++)
-			if (abs(mat(i,j)) < eps) {mat(i, j) = 0.0;}
+		for (int j = 0; j < 3; j++) {
+//			std::cout << "mat[" << i << "][" << j << "] = "  << mat(i,j) << std::endl;
+			if (abs(mat(i,j)) < eps) {
+				mat(i, j) = 0.0;
+//				std::cout << "fixed mat[" << i << "][" << j << "] = "  << mat(i,j) << std::endl;
+			}
+		}
 	}
 }
 
 void ksi_coef::print() const {
 	double eps = 1e-13;
-	Matrix3d ii11 = g11(); 		trim(ii11, eps);
+	Matrix3d ii11 = g11();
+//	std::cout << "i11(0,2) = " << i11(0,2) << std::endl;
+	trim(ii11, eps);
+//	std::cout << "i11(0,2) = " << i11(0,2) << std::endl;
 	Matrix3d ii12 = g12(); 		trim(ii12, eps);
 	Matrix3d ii21 = g21(); 		trim(ii21, eps);
 	Matrix3d ii22 = g22(); 		trim(ii22, eps);

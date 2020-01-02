@@ -1,4 +1,6 @@
 #include "PORR.h"
+#define Nthreads 4
+
 using namespace Eigen;
 using std::cout;
 using std::endl;
@@ -13,11 +15,40 @@ VectorXd RHS(const double t, const VectorXd &Y, const inputClass &input) {
 	datas.set_S(q, input);
 
 	//--- Wspolczynniki calkowego rownania ruchu
+
+	//	https://stackoverflow.com/questions/18669296/
+	//	c-openmp-parallel-for-loop-alternatives-to-stdvector
 	std::vector<ksi_coef> ksi;
 	ksi.reserve(input.Nbodies);
-	for (int i = 0; i < input.Nbodies; i++) {
-		ksi.emplace_back(p, datas, i);
+	size_t *prefix;
+
+#pragma omp parallel num_threads(Nthreads)
+{
+	int ithread  = omp_get_thread_num();
+	int nthreads = omp_get_num_threads();
+#pragma omp single
+	{
+		prefix = new size_t[nthreads+1];
+		prefix[0] = 0;
 	}
+	std::vector<ksi_coef> ksi_private;
+
+#pragma omp for schedule(static) nowait
+	for (int i = 0; i < input.Nbodies; i++)
+		ksi_private.emplace_back(p, datas, i);
+
+	prefix[ithread+1] = ksi_private.size();
+	#pragma omp barrier
+	#pragma omp single
+	{
+		for(int i=1; i<(nthreads+1); i++)
+			prefix[i] += prefix[i-1];
+//		ksi.resize(ksi.size() + prefix[nthreads]);
+	}
+	std::copy(ksi_private.begin(), ksi_private.end(), ksi.begin() + prefix[ithread]);
+}
+
+	delete [] prefix;
 
 	//Assembly - disassemlby phase
 
@@ -48,20 +79,54 @@ VectorXd RHS(const double t, const VectorXd &Y, const inputClass &input) {
 		std::vector<acc_force> Q_branch;
 		branch.reserve(input.tiers_info[i]);
 		Q_branch.reserve(input.tiers_info[i]);
-
 		const int end_of_branch = input.tiers_info[i-1] - 1;
 
-		for (int j = 0; j < end_of_branch; j+=2) {
-			branch.emplace_back(tree[i-1][j], tree[i-1][j+1]);
-			Q_branch.emplace_back(Q_tree[i-1][j], Q_tree[i-1][j+1]);
+		size_t *prefix;
+#pragma omp parallel num_threads(Nthreads)
+{
+		int ithread  = omp_get_thread_num();
+		int nthreads = omp_get_num_threads();
+#pragma omp single
+		{
+			prefix = new size_t[nthreads+1];
+			prefix[0] = 0;
 		}
+		std::vector<Assembly> 	 branch_p;
+		std::vector<acc_force> Q_branch_p;
+
+#pragma omp for schedule(static) nowait
+		for (int j = 0; j < end_of_branch; j+=2) {
+			branch_p.emplace_back(tree[i-1][j], tree[i-1][j+1]);
+			Q_branch_p.emplace_back(Q_tree[i-1][j], Q_tree[i-1][j+1]);
+		}
+	    prefix[ithread+1] = branch_p.size();
+	    #pragma omp barrier
+	    #pragma omp single
+	    {
+	        for(int i=1; i<(nthreads+1); i++)
+				prefix[i] += prefix[i-1];
+// To do boost performance (jak zrobic, zeby zadzialalo?)
+//	        tree[i].resize(branch_p.size() + prefix[nthreads]);
+//	        Q_tree[i].resize(Q_branch_p.size() + prefix[nthreads]);
+
+	        branch.resize(branch_p.size() + prefix[nthreads]);
+	        Q_branch.resize(Q_branch_p.size() + prefix[nthreads]);
+	    }
+
+	    std::copy(branch_p.begin(), branch_p.end(), branch.begin() + prefix[ithread]);
+	    std::copy(Q_branch_p.begin(), Q_branch_p.end(), Q_branch.begin() + prefix[ithread]);
+//	    std::copy(branch_p.begin(), branch_p.end(), tree[i].begin() + prefix[ithread]);
+//	    std::copy(Q_branch_p.begin(), Q_branch_p.end(), Q_tree[i].begin() + prefix[ithread]);
+}
+		delete [] prefix;
+
 		// Nieparzysta liczba czlonow w galezi powyzej
 		if (input.tiers_info[i-1] % 2 == 1) {
-			// To do: stosowny konstruktor kopiujacy
-			branch.emplace_back(tree[i-1].back()); // back() - ostatni element wektora
+			branch.emplace_back(tree[i-1].back());
 			Q_branch.emplace_back(Q_tree[i-1].back());
-			std::cout << "galaz powyzej zawiera nieparzysta liczbe elementow" << endl << endl;
+			std::cout << "galaz powyzej zawiera nieparzysta liczbe elementow. i = " << i << endl << endl;
 		}
+		// Czy mozemy skopiowac zawartosc branch bezposrednio do tego kontenera?
 		tree.push_back(branch);
 		Q_tree.push_back(Q_branch);
 	}
@@ -152,6 +217,10 @@ bool ksi_coef::check_if_ok() const {
 
 ksi_coef::ksi_coef() {/*Note: trzeba zdefiniowac, mimo ze jest 100% defaultowy*/}
 
+Assembly::Assembly() { }
+
+acc_force::acc_force() { }
+
 ksi_coef::ksi_coef(const ksi_coef &_ksi) {
 	i11 = _ksi.i11;
 	i22 = _ksi.i22;
@@ -165,11 +234,15 @@ MatrixXd set_forces_at_H1(const data_set &datas, const inputClass &input) {
 	const double g = 9.80665;
 	MatrixXd Q1(3, input.Nbodies);
 	Vector3d F = Vector3d(0.0, 0.0, 0.0);
+//#pragma omp parallel for
 	for (int i = 0; i < input.Nbodies; i++) {
 		double m = input.bodies[i].m();
 		F(1) = - m * g;
 		Q1.col(i) = datas.tab[i].S1c() * F;
 	}
+
+	std::cout << "Q1 = " << Q1 << endl;
+
 	return Q1;
 }
 
@@ -210,7 +283,7 @@ acc_force::acc_force(const acc_force &A)
 acc_force::acc_force(Vector3d _Q1, const Matrix3d &_S12)
 	: Q1(_Q1), S12(_S12), AssA(nullptr), AssB(nullptr) { }
 
-acc_force::acc_force( acc_force &A, acc_force &B)
+acc_force::acc_force(acc_force &A, acc_force &B)
 	: AssA(&A), AssB(&B) {
 	S12 = A.S12 * B.S12;
 	Q1 = A.Q1 + A.S12 * B.Q1;
@@ -264,4 +337,29 @@ void Assembly::set(const Assembly &A) {
 void acc_force::set(const acc_force &A) {
 	_Q1art = A._Q1art;
 	_Q2art = A._Q2art;
+}
+
+
+// Bez tych operatorow nie dziala std::copy()
+Assembly& Assembly::operator=(const Assembly& A) {
+	this->ksi = A.ksi;
+	this->S12 = A.S12;
+	this->_T1 = A._T1;
+	this->_T2 = A._T2;
+	this->AssA = A.AssA;
+	this->AssB = A.AssB;
+	this->D = A.D;
+	this->H = A.H;
+
+	return *this;
+}
+acc_force& acc_force::operator=(const acc_force& A) {
+	this->Q1 = A.Q1;
+	this->S12 = A.S12;
+	this->_Q1art = A._Q1art;
+	this->_Q2art = A._Q2art;
+	this->AssA = A.AssA;
+	this->AssB = A.AssB;
+
+	return *this;
 }

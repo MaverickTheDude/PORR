@@ -6,16 +6,21 @@ using std::endl;
 
 IOFormat exportFmt(FullPrecision, 0, " ", "\n", "", "", "", "");
 double* times = nullptr;
+const int Nthreads = 1;
+
 int main() {
 	// STREFA WARUNKOW POCZATKOWYCH
-	const int Nbodies = 1024;
-	VectorXd q0 = VectorXd::Zero(Nbodies);
+ 	const int Nbodies = 4;
+/*	VectorXd q0 = VectorXd::Zero(Nbodies);
 	VectorXd v0 = VectorXd::Zero(Nbodies);
-	q0(0) = M_PI/4;
-/*	VectorXd q0(Nbodies), v0(Nbodies);
-	q0 << 0.0, -M_PI/4, 0.0, M_PI/4, 0.0, 0.0, 0.0, 0.0;
-	v0 << -1.0, 2.0, 0.0, 0.5, 0.0, 0.0, 0.0, 0.0;*/
+	q0(0) = M_PI/4;*/
+	VectorXd q0(Nbodies), v0(Nbodies);
+	q0 << 0.0, -M_PI/4, 0.0, M_PI/4;//, 0.0, 0.0, 0.0, 0.0;
+	v0 << -1.0, 2.0, 0.0, 0.5;//, 0.0, 0.0, 0.0, 0.0/
 	inputClass input(Nbodies, q0, v0);
+
+//	std::cout << "Max threads =" << omp_get_max_threads() << endl;
+//	omp_set_num_threads(1);
 
 	// OBLICZENIA
 	times = new double[input.N];
