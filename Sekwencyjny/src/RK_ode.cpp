@@ -20,7 +20,7 @@ solution RK_solver(inputClass &input) {
 	y_m1.tail(n) = input.q0;
 
 	int j = 0;
-	double t = omp_get_wtime(); //tic
+//	double t = omp_get_wtime(); //tic
 	for (int i = 1; i < T.size(); i++) {
 		start = clock();
 
@@ -41,8 +41,8 @@ solution RK_solver(inputClass &input) {
 		times[j] = time_taken;
 		j++;
 	}
-	t =  omp_get_wtime() - t; //toc
-	std::cout << "calkowity czas: " << t << std::endl << std::endl;
+//	t =  omp_get_wtime() - t; //toc
+//	std::cout << "calkowity czas: " << t << std::endl << std::endl;
 
 	solution soln(T, pTab, qTab);
 	return soln;

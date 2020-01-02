@@ -1,4 +1,6 @@
 #include "PORR.h"
+#define Nthreads 4
+
 using namespace Eigen;
 
 Matrix2d Rot(double fi) {
@@ -70,6 +72,8 @@ data_set::~data_set() {
 
 void data_set::set_S(const VectorXd &q, const inputClass &input) {
 	const VectorXd fi = get_abs_angles(q);
+
+#pragma omp parallel for num_threads(Nthreads) schedule(static)
 	for (int i = 0; i < n; i++) {
 		tab[i].set_S(i, fi[i], input);
 	}
@@ -77,6 +81,8 @@ void data_set::set_S(const VectorXd &q, const inputClass &input) {
 
 void data_set::set_dS(const VectorXd &dq) {
 	const VectorXd omega = get_abs_angles(dq);
+
+#pragma omp parallel for num_threads(Nthreads) schedule(static)
 	for (int i = 0; i < n; i++) {
 		tab[i].set_dS(omega[i]);
 	}
@@ -131,4 +137,9 @@ void ksi_coef::print() const {
 	std::cout << "ksi_22 \n" << i22 << std::endl << std::endl;
 	std::cout << "ksi_10 \n" << i10 << std::endl << std::endl;
 	std::cout << "ksi_20 \n" << i20 << std::endl << std::endl;
+}
+
+unsigned long long int divide(int a, int b) {
+	return static_cast<int>(
+			round(static_cast<double>(a) / static_cast<double>(b)) );
 }

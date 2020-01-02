@@ -45,8 +45,8 @@ class inputClass {
 	// parametry do ustawienia:
 	const double L = 0.4;
 	const double m = 0.5;
-	const double dt = 0.02;
-	const double Tk = 1;
+	const double dt = 0.01;
+	const double Tk = 0.01;
 	VectorXd _p0;
 	void v0_to_p0();
 
@@ -132,6 +132,7 @@ struct solution {
 solution RK_solver(inputClass &input);
 VectorXd RHS(const double t, const VectorXd &Y, const inputClass &input);
 void done();
+unsigned long long int divide(int a, int b);
 VectorXd get_abs_angles(const VectorXd &q0);
 
 MatrixXd getVelocity(const VectorXd &dq, const data_set &data);

@@ -6,25 +6,29 @@ using std::endl;
 
 IOFormat exportFmt(FullPrecision, 0, " ", "\n", "", "", "", "");
 double* times = nullptr;
-const int Nthreads = 1;
 
 int main() {
 	// STREFA WARUNKOW POCZATKOWYCH
  	const int Nbodies = 4;
 /*	VectorXd q0 = VectorXd::Zero(Nbodies);
 	VectorXd v0 = VectorXd::Zero(Nbodies);
-	q0(0) = M_PI/4;*/
+	q0(0) = M_PI/6;*/
+
 	VectorXd q0(Nbodies), v0(Nbodies);
 	q0 << 0.0, -M_PI/4, 0.0, M_PI/4;//, 0.0, 0.0, 0.0, 0.0;
-	v0 << -1.0, 2.0, 0.0, 0.5;//, 0.0, 0.0, 0.0, 0.0/
+	v0 << -1.0, 2.0, 0.0, 0.5;//, 0.0, 0.0, 0.0, 0.0;
+
 	inputClass input(Nbodies, q0, v0);
 
 //	std::cout << "Max threads =" << omp_get_max_threads() << endl;
-//	omp_set_num_threads(1);
 
 	// OBLICZENIA
 	times = new double[input.N];
+
+	double t = omp_get_wtime(); //tic
 	solution sol = RK_solver(input);
+	t =  omp_get_wtime() - t; //toc
+	std::cout << "calkowity czas: " << t << std::endl << std::endl;
 
 	double total_time = 0.0;
 /*	for (int i = 0; i < input.N; i++) {
@@ -52,7 +56,6 @@ int main() {
 	outFile << sol.T.transpose() << endl;
 	outFile << sol.pTab.format(exportFmt) << '\n' << sol.qTab.format(exportFmt) << endl;
 
-	cout << get_abs_angles(input.q0) << endl;
 	done();
 	return 0;
 }
