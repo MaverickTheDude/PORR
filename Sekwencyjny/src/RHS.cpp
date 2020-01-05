@@ -12,7 +12,7 @@ VectorXd RHS(const double t, const VectorXd &Y, const inputClass &input) {
 	data_set datas = data_set(input.Nbodies);
 	datas.set_S(q, input);
 
-	//--- Wspolczynniki calkowego rownania ruchu
+	//--- Wspolczynniki calkowego rownania ruchu -----------------------------------------
 
 	//	https://stackoverflow.com/questions/18669296/
 	//	c-openmp-parallel-for-loop-alternatives-to-stdvector
@@ -41,6 +41,7 @@ VectorXd RHS(const double t, const VectorXd &Y, const inputClass &input) {
 	{
 		for(int i=1; i<(nthreads+1); i++)
 			prefix[i] += prefix[i-1];
+		//note: tutaj nie potrzebna funkcja resize()
 	}
 	std::copy(ksi_private.begin(), ksi_private.end(), ksi.begin() + prefix[ithread]);
 }
@@ -51,25 +52,60 @@ VectorXd RHS(const double t, const VectorXd &Y, const inputClass &input) {
 	MatrixXd Q1(3, input.Nbodies);
 	Q1 = set_forces_at_H1(datas, input);
 
-	//--- Pierwsza galaz drzewa binarnego
-	std::vector<Assembly> base_assembly;
-	std::vector<acc_force> base_Qacc;
-	base_assembly.reserve(input.Nbodies);
-	base_Qacc.reserve(input.Nbodies);
-	for (int i = 0; i < input.tiers_info[0]; i++) {
-		base_assembly.emplace_back(ksi[i], datas.tab[i].S12());
-		base_Qacc.emplace_back(Q1.col(i), datas.tab[i].S12());
-	}
-
 	const unsigned int tiers = input.tiers-1;	// ostatnie pietro definiujemy recznie
 	std::vector< std::vector<Assembly> > tree;
 	std::vector< std::vector<acc_force> > Q_tree;
 	tree.reserve(tiers);
 	Q_tree.reserve(tiers);
-	tree.push_back(base_assembly);
-	Q_tree.push_back(base_Qacc);
 
-	//--- Rekursja od lisci do korzenia
+	//--- Pierwsza galaz drzewa binarnego -----------------------------------------
+
+	std::vector<Assembly> base_assembly;
+	std::vector<acc_force> base_Qacc;
+	base_assembly.reserve(input.Nbodies);
+	base_Qacc.reserve(input.Nbodies);
+
+#pragma omp parallel
+{
+	int ithread  = omp_get_thread_num();
+	int nthreads = omp_get_num_threads();
+#pragma omp single
+	{
+		prefix = new size_t[nthreads+1];
+		prefix[0] = 0;
+	}
+	std::vector<Assembly> base_assembly_p;
+	std::vector<acc_force> base_Qacc_p;
+	unsigned long long int chunk = divide(input.tiers_info[0], nthreads);
+	base_assembly_p.reserve(chunk);
+	base_Qacc_p.reserve(chunk);
+
+#pragma omp for schedule(static, chunk) nowait
+	for (int i = 0; i < input.Nbodies; i++) {
+		base_assembly_p.emplace_back(ksi[i], datas.tab[i].S12());
+		base_Qacc_p.emplace_back(Q1.col(i), datas.tab[i].S12());
+	}
+	prefix[ithread+1] = base_assembly_p.size();
+	#pragma omp barrier
+	#pragma omp single
+	{
+		for(int i=1; i<(nthreads+1); i++)
+			prefix[i] += prefix[i-1];
+		// note: funkcja resize() jest niezbedna
+		base_assembly.resize(base_assembly.size() + prefix[nthreads]);
+		base_Qacc.resize(base_Qacc.size() + prefix[nthreads]);
+	}
+	std::copy(base_assembly_p.begin(), base_assembly_p.end(), base_assembly.begin() + prefix[ithread]);
+	std::copy(base_Qacc_p.begin(), base_Qacc_p.end(), base_Qacc.begin() + prefix[ithread]);
+}
+	delete [] prefix;
+	tree.push_back(std::move(base_assembly));
+	Q_tree.push_back(std::move(base_Qacc));
+//	tree.push_back(base_assembly);
+//	Q_tree.push_back(base_Qacc);
+
+	//--- Rekursja od lisci do korzenia -----------------------------------------
+
 	for (unsigned int i = 1; i < tiers; i++) {
 		std::vector<Assembly> 	 branch;
 		std::vector<acc_force> Q_branch;
@@ -122,14 +158,18 @@ VectorXd RHS(const double t, const VectorXd &Y, const inputClass &input) {
 		if (input.tiers_info[i-1] % 2 == 1) {
 			branch.emplace_back(tree[i-1].back());
 			Q_branch.emplace_back(Q_tree[i-1].back());
-			std::cout << "galaz powyzej zawiera nieparzysta liczbe elementow. i = " << i << endl << endl;
+//			std::cout << "galaz powyzej zawiera nieparzysta liczbe elementow. i = " << i << endl << endl;
 		}
 		// Czy mozemy skopiowac zawartosc branch bezposrednio do tego kontenera?
-		tree.push_back(branch);
-		Q_tree.push_back(Q_branch);
+		// std::move nie ma wplywu na czas wykonania programu, natomiast kopiowanie do tree daje segfaulta
+		tree.push_back(std::move(branch));
+		Q_tree.push_back(std::move(Q_branch));
+//		tree.push_back(branch);
+//		Q_tree.push_back(Q_branch);
 	}
 
-	//--- Base body connection
+	//--- Base body connection -----------------------------------------
+
 	Assembly AssemblyS = Assembly(tree[tiers-1][0], tree[tiers-1][1]);
 	acc_force Q_AssemblyS = acc_force(Q_tree[tiers-1][0], Q_tree[tiers-1][1]);
 	AssemblyS.connect_base_body();
@@ -137,7 +177,8 @@ VectorXd RHS(const double t, const VectorXd &Y, const inputClass &input) {
 	Q_AssemblyS.connect_base_body();
 	Q_AssemblyS.disassemble();
 
-	//--- Disassembly
+	//--- Disassembly -----------------------------------------
+
 	for (int i = tiers-1; i > 0; i--) {
 		const int end_of_branch = input.tiers_info[i-1] % 2 == 0 ?
 				input.tiers_info[i] : input.tiers_info[i]-1;
@@ -150,11 +191,12 @@ VectorXd RHS(const double t, const VectorXd &Y, const inputClass &input) {
 		if (input.tiers_info[i-1] % 2 == 1) {
 			tree[i-1].back().set(tree[i].back());
 			Q_tree[i-1].back().set(Q_tree[i].back());
-			cout << "disassembly: galaz powyzej zawiera nieparzysta liczbe elementow" << endl << endl;
+//			cout << "disassembly: galaz powyzej zawiera nieparzysta liczbe elementow" << endl << endl;
 		}
 	}
 
-	//--- velocity calculation
+	//--- velocity calculation -----------------------------------------
+
 	MatrixXd P1art(3,input.Nbodies);
 	dq(0) = H.transpose() * tree[0][0].calculate_V1();
 	P1art.col(0) = tree[0][0].T1() + H*p(0);

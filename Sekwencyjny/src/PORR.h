@@ -8,6 +8,7 @@
 //    z "new" zwraca blad Egiena - czemu?)
 // # acc_force::pierwszy arg. by val, bo error (czemu?)
 // # zlosliwe const-correctness na przykladzie wskaznika *AsmA, *AsmB
+// # kopiowanie bezposrednio do vector< vector<Assembly> > tree
 
 #ifndef PORR_H_
 #define PORR_H_
@@ -43,8 +44,8 @@ public:
 class inputClass {
 	friend class body;
 	// parametry do ustawienia:
-	const double L = 0.4;
-	const double m = 0.5;
+	const double L = 0.04;
+	const double m = 0.05;
 	const double dt = 0.01;
 	const double Tk = 0.01;
 	VectorXd _p0;
@@ -199,8 +200,8 @@ public:
 	Vector3d Q2art() const {return _Q2art;}
 	void set(const acc_force &A);
 
-private:
 	Vector3d Q1; // accumulated force at H1
+private:
 	Matrix3d S12;
 	Vector3d _Q1art, _Q2art; // acrticulated forces
 	acc_force */*const*/ AssA, */*const*/ AssB;
