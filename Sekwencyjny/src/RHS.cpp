@@ -1,6 +1,4 @@
 #include "PORR.h"
-#define Nthreads 4
-
 using namespace Eigen;
 using std::cout;
 using std::endl;
@@ -22,7 +20,7 @@ VectorXd RHS(const double t, const VectorXd &Y, const inputClass &input) {
 	ksi.reserve(input.Nbodies);
 	size_t *prefix;
 
-#pragma omp parallel num_threads(Nthreads)
+#pragma omp parallel
 {
 	int ithread  = omp_get_thread_num();
 	int nthreads = omp_get_num_threads();
@@ -80,7 +78,7 @@ VectorXd RHS(const double t, const VectorXd &Y, const inputClass &input) {
 		const int end_of_branch = input.tiers_info[i-1] - 1;
 
 		size_t *prefix;
-#pragma omp parallel num_threads(Nthreads)
+#pragma omp parallel
 {
 		int ithread  = omp_get_thread_num();
 		int nthreads = omp_get_num_threads();
@@ -144,7 +142,7 @@ VectorXd RHS(const double t, const VectorXd &Y, const inputClass &input) {
 		const int end_of_branch = input.tiers_info[i-1] % 2 == 0 ?
 				input.tiers_info[i] : input.tiers_info[i]-1;
 
-#pragma omp parallel for num_threads(Nthreads) schedule(static)
+#pragma omp parallel for schedule(static)
 		for (int j = 0; j < end_of_branch; j++) {
 			tree[i].at(j).disassemble();
 			Q_tree[i][j].disassemble();
@@ -161,7 +159,7 @@ VectorXd RHS(const double t, const VectorXd &Y, const inputClass &input) {
 	dq(0) = H.transpose() * tree[0][0].calculate_V1();
 	P1art.col(0) = tree[0][0].T1() + H*p(0);
 
-#pragma omp parallel for num_threads(Nthreads) schedule(static)
+#pragma omp parallel for schedule(static)
 	for (int i = 1; i < input.tiers_info[0]; i++) {
 		Vector3d V1B = tree[0][i].calculate_V1();
 		Vector3d V2A = tree[0][i-1].calculate_V2();
@@ -178,7 +176,7 @@ VectorXd RHS(const double t, const VectorXd &Y, const inputClass &input) {
 					  + des.col(i+1);
 	}
 
-#pragma omp parallel for num_threads(Nthreads) schedule(static)
+#pragma omp parallel for schedule(static)
 	for (int i = 0; i < input.Nbodies; i++) {
 		dp(i) = H.transpose() * (des.col(i) +
 				Q_tree[0][i].Q1art() - datas.tab[i].dSc1()*P1art.col(i) );
@@ -237,8 +235,9 @@ MatrixXd set_forces_at_H1(const data_set &datas, const inputClass &input) {
 	const double g = 9.80665;
 	MatrixXd Q1(3, input.Nbodies);
 	Vector3d F = Vector3d(0.0, 0.0, 0.0);
+
 // w tym przypadku dziala taki prosty one-liner. Eigen chyba zawiera wlasna obsluge openMP
-#pragma omp parallel for num_threads(Nthreads) schedule(static)
+#pragma omp parallel for schedule(static)
 	for (int i = 0; i < input.Nbodies; i++) {
 		double m = input.bodies[i].m();
 		F(1) = - m * g;
