@@ -1,6 +1,9 @@
 # Added:
 # Text files:
 *.txt
+# Matlab autosave files
+*.asv
+
 /brudnopis
 Sekwencyjny/results.txt
 *.xml
