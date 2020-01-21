@@ -19,9 +19,42 @@ Icm = 1/12*mass*L^2;
 M = diag([mass mass Icm]);
 sC1 = [-L/2; 0]; sC2 = [L/2; 0];
 input = struct('Nbodies',Nbodies,'q0',q0,'p0',p0,'dt',dt,'Tk',Tk,...
-    'tiers',tiers,'tiersInfo',tiersInfo,'M',M,'sC1',sC1,'sC2',sC2);
+    'tiers',tiers,'tiersInfo',tiersInfo,'M',M,'sC1_loc',sC1,'sC2_loc',sC2);
+%% sequential ex
+fi = pi/2;
+L = 0.4;                mass = 0.5;
+p = 0.5;                pnext = 0.1;
+sC1 = [-L/2; 0];        sC2 = [L/2; 0];
+Icm = 1/12*mass*L^2;    M = diag([mass mass Icm]);
+input = struct('M',M,'sC1_loc',sC1,'sC2_loc',sC2);
+block = createBlock(fi,p, pnext,input)
+%%
+s = 1000;
+GlobalAsm = zeros(17, 3 * s);
+tic
+for i = 1 : s
+    GlobalAsm(:,3*i-2:3*i) = createBlock2(0.5*i,i/2, i,input);
+end
+t2 = toc
+%% stack overflow
+fi = pi/2;
+L = 0.4;                mass = 0.5;
+p = 0.5;                pnext = 0.1;
+sC1 = [-L/2; 0];        sC2 = [L/2; 0];
+Icm = 1/12*mass*L^2;    M = diag([mass mass Icm]);
+M = gpuArray(M);
+sC1 = gpuArray(sC1);
+sC2 = gpuArray(sC2);
+input = struct('M',M,'sC1_loc',sC1,'sC2_loc',sC2);
+block = createBlock(fi,p, pnext,input)
+
 
 %%
-q0 = [0; -pi/4; 0; pi/4];
-
-fi = arrayfun(@cumsum,q0)
+s = 1000;
+GlobalAsm = zeros(17, 3 * s, 'gpuArray');
+tic
+for i = 1 : s
+    i = gpuArray(i);
+    GlobalAsm(:,3*i-2:3*i) = createBlock(0.5*i,i/2, i,input);
+end
+t = toc

@@ -20,6 +20,26 @@ GlobalDism = zeros(4 * tiers, 3 * tiersInfo(1), 'gpuArray');
 % zamiana wsp zlaczowych na globalne
 fi = arrayfun(@cumsum,q);
 
+% TO DO: wspolczynniki ksi wchodza do GlobalAsm
+M = input.M;
+sC1_loc = input.sC1_loc;    sC2_loc = input.sC2_loc;
+s12_loc = sC1_loc-sC2_loc;
+s12 = Rot(fi(i))*s12_loc;   s21 = -Rot(fi(i))*s12_loc;
+sC1 = Rot(fi(i))*sC1_loc;   s1C = -Rot(fi(i))*sC1_loc;
+S12(3,1:2) = (Om*s12).';    S21(3,1:2) = (Om*s21).';
+S1c(3,1:2) = (Om*s1C).';    Sc1(3,1:2) = (Om*sC1).';
+sC2 = Rot(fi(i))*sC2_loc;   s2C = -Rot(fi(i))*sC2_loc;
+S2c(3,1:2) = (Om*s2C).';    Sc2(3,1:2) = (Om*sC2).';
+M1 = S1c * M * S1c.';       M2 = S2c * M * S2c.';
+
+KSI11 = inv(M1);    KSI12 = M1 \ S12;
+KSI22 = inv(M2);    KSI21 = M2 \ S21;
+
+KSI10 = M1 \ (+H*p(i)   - S12*H*p(i+1));
+KSI20 = M2 \ (-H*p(i+1) + S21*H*p(i));
+
+
+
 data = getS(q, input);
 
 % assembly
