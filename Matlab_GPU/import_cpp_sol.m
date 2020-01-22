@@ -3,11 +3,11 @@ PATH = 'D:\Code\PORR\Sekwencyjny';
 working_dir = cd(PATH);
 file = 'results.txt';
 data = importdata(file);
-Nbodieas = (size(data,1)-1)/2;
+Nbodies = (size(data,1)-1)/2;
 
 T = data(1,:);
-pTab = data(2:Nbodieas+1,:);
-qTab = data(end-Nbodieas+1:end,:);
+pTab = data(2:Nbodies+1,:);
+qTab = data(end-Nbodies+1:end,:);
 
 cd(working_dir);
 
@@ -22,7 +22,7 @@ input{7}.dt = dt;     input{7}.Tk = Tk;
 stateHDCA = HDCASolver(input);
 stateH = joint2absolute(stateHDCA, input);
 %% wyniki
-b = 4;
+b = 2;
 fig; plot(T, qTab(b,:)); hold on;
 plot(stateHDCA.T, stateHDCA.Q(b,:));
 legend('c++','Matlab'); grid on; 

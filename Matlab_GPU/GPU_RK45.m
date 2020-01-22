@@ -6,9 +6,9 @@ dt = input.dt;      Tk = input.Tk;
 T = 0:dt:Tk;
 Nsamples = length(T);
 
-Ytab = zeros(N, Nsamples);
+Ytab = zeros(2*N, Nsamples);
 y_m1 = [p0; q0];
-Ytab(1,:) = y_m1;
+Ytab(:,1) = y_m1;
 
 for i = 2 : Nsamples
     k1 = RHS(T(i-1), y_m1, input);

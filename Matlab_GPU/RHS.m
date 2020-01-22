@@ -1,7 +1,7 @@
-function [dY, dq, dp, sigma] = RHS(t, Y, input)
+function dY = RHS(t, Y, input)
 % N-link pendulum in joint coordinates
 % cala struktura z danymi zawarta jest w jednej macierzy:
-% Assembly phase: [i11; i12; i21; i22; S12; i10; i20; Q1acc]
+% Assembly phase: [i11; i12; i21; i22; i10; i20; S12; Q1acc]
 % Disassembly phase: [T1A; T2A, Q1Art; Q2Art]
 
 N = input.Nbodies;
@@ -9,111 +9,79 @@ dt = input.dt;      Tk = input.Tk;
 T = 0:dt:Tk;
 tiers = input.tiers;
 tiersInfo = input.tiersInfo;
-Nsamples = length(T);
+ind = @(i) (3*i-2:3*i);
 
 p = Y(1:N);         H = [0; 0; 1]; 
 q = Y(N+1:end);     D = [eye(2); [0 0]];
 
-GlobalAsm = zeros(18 * tiers, 3 * tiersInfo(1), 'gpuArray');
-GlobalDism = zeros(4 * tiers, 3 * tiersInfo(1), 'gpuArray');
+tree = cell(tiers, 2);
+for i = 1 : tiers
+    tree{i, 1} = zeros(18, 3 * tiersInfo(i));
+    tree{i, 2} = zeros( 4, 3 * tiersInfo(i));
+end
 
 % zamiana wsp zlaczowych na globalne
-fi = arrayfun(@cumsum,q);
+fi = cumsum(q);
 
-% TO DO: wspolczynniki ksi wchodza do GlobalAsm
-M = input.M;
-sC1_loc = input.sC1_loc;    sC2_loc = input.sC2_loc;
-s12_loc = sC1_loc-sC2_loc;
-s12 = Rot(fi(i))*s12_loc;   s21 = -Rot(fi(i))*s12_loc;
-sC1 = Rot(fi(i))*sC1_loc;   s1C = -Rot(fi(i))*sC1_loc;
-S12(3,1:2) = (Om*s12).';    S21(3,1:2) = (Om*s21).';
-S1c(3,1:2) = (Om*s1C).';    Sc1(3,1:2) = (Om*sC1).';
-sC2 = Rot(fi(i))*sC2_loc;   s2C = -Rot(fi(i))*sC2_loc;
-S2c(3,1:2) = (Om*s2C).';    Sc2(3,1:2) = (Om*sC2).';
-M1 = S1c * M * S1c.';       M2 = S2c * M * S2c.';
+for i = 1 : N-1
+    tree{1}(:,3*i-2:3*i) = initCoefs(fi(i), p(i), p(i+1), input);
+end
+tree{1}(:,3*N-2:3*N) = initCoefs(fi(N), p(N), 0, input);
 
-KSI11 = inv(M1);    KSI12 = M1 \ S12;
-KSI22 = inv(M2);    KSI21 = M2 \ S21;
-
-KSI10 = M1 \ (+H*p(i)   - S12*H*p(i+1));
-KSI20 = M2 \ (-H*p(i+1) + S21*H*p(i));
+for i = 2 : tiers
+    for j = 1 : tiersInfo(i)
+        % indeksowanie po j: 2*k-1:2*k, gdzie w miejsce k wstawiamy ind(j)
+        tree{i,1} (:, ind(j)) = ...
+      assembleBlocks(tree{i-1,1}(:,6*j-5:6*j-3), tree{i-1,1}(:,6*j-2:6*j));
+    end
+end
 
 
-
-data = getS(q, input);
-
-% assembly
-ksi = ksiCoefs(q, p, input);
-Q1 = setForcesAtH1(q, input);
-assemblyA = struct('Q1',Q1(:,1),'ksi',ksi(1),'S12',data(1).S12);
-assemblyB = struct('Q1',Q1(:,2),'ksi',ksi(2),'S12',data(2).S12);
-assemblyAB = assemblyPhase(assemblyA, assemblyB);
-assemblyA = struct('Q1',Q1(:,3),'ksi',ksi(3),'S12',data(3).S12);
-assemblyB = struct('Q1',Q1(:,4),'ksi',ksi(4),'S12',data(4).S12);
-assemblyCD = assemblyPhase(assemblyA, assemblyB);
-[Q1Sacc, ksiS, S12S] = assemblyPhase(assemblyAB, assemblyCD);
+blockS = tree{tiers, 1};
 
 % base body connection
-c = - D.' * ksiS.i11 * D; % no inverse here (!)
-T1S = D * (c \ D.') * ksiS.i10;     % wzor (43)
+c = - D.' * blockS(ind(1),:) * D; % no inverse here (!)
+T1S = D * (c \ D.') * blockS(13,:).';     % wzor (43)
 T2S = zeros(3,1);
-Q1Sart = Q1Sacc; % articulated forces
+Q1Sart = blockS(end,:).'; % articulated forces
 Q2Sart = zeros(3,1);
-V1S = ksiS.i11 * T1S + ksiS.i10;    % wzor (42)
-V2S = ksiS.i21 * T1S + ksiS.i20;    % wzor (38)
+tree{tiers, 2} = [T1S.'; T2S.'; Q1Sart.'; Q2Sart.'];
 
-% disassembly
-structS = struct('ksi',ksiS,'T1',T1S,'T2',T2S,'Q1',Q1Sart,'Q2',Q2Sart);
-[structCtmp, structDtmp] = disassemblyPhase(structS);
+for i = tiers : -1 : 2
+    for j = 1 : tiersInfo(i)
+        tree{i-1, 2}(:, 6*j-5:6*j) = disassembleBlock(...
+tree{i-1,1}(:,6*j-5:6*j-3), tree{i-1,1}(:,6*j-2:6*j),...
+tree{i,1}(:,ind(j)), tree{i,2}(:, ind(j)));
+    end
+end
 
-[structA, structB] = disassemblyPhase(structCtmp);
-[structC, structD] = disassemblyPhase(structDtmp);
+P1art = zeros(3,N);
+P1art(:,1) = tree{1,2}(1,ind(1)).' + H * p(1);
+[dp, dq] = deal(zeros(N,1));
+dq(1) = H.' * getV(tree{1,1}(:,ind(1)), tree{1,2}(:,ind(1)));
 
-Q1Aart = structA.Q1;   T1A = structA.T1;   T2A = structA.T2;
-Q1Bart = structB.Q1;   T1B = structB.T1;   T2B = structB.T2;
-Q1Cart = structC.Q1;   T1C = structC.T1;   T2C = structC.T2;
-Q1Dart = structD.Q1;   T1D = structD.T1;   T2D = structD.T2;
-sigma = [T1A(1:2); T1B(1:2); T1C(1:2); T1D(1:2)];
+for i = 2 : N
+    [~, V1B] = getV(tree{1,1}(:,ind(i)), tree{1,2}(:,ind(i)));
+    V2A = getV(tree{1,1}(:,ind(i-1)), tree{1,2}(:,ind(i-1)));
+    dq(i) = H.' * (V1B - V2A);
+    P1art(:,i) = tree{1,2}(1,ind(i)).' + H * p(i);
+end
+dfi = cumsum(dq);
 
-% Velocity calculation
-% wzor (46) zgadza sie ze wzorami (15), (16).
-[V1A, V2A] = calculateVelocities(ksi(1), T1A, T2A); % wzory (15), (16)
-[V1B, V2B] = calculateVelocities(ksi(2), T1B, T2B);
-[V1C, V2C] = calculateVelocities(ksi(3), T1C, T2C);
-[V1D, V2D] = calculateVelocities(ksi(4), T1D, T2D);
-dq = zeros(4,1);
-dq(1) = H' * V1A;
-dq(2) = H' * (V1B - V2A);
-dq(3) = H' * (V1C - V2B);
-dq(4) = H' * (V1D - V2C);
+des = zeros(3, N);
+for i = N-1 : -1 : 1
+    [~, dSc2] = getdS2(fi(i), dfi(i), input);
+    dSc1 = getdS2(fi(i+1), dfi(i+1), input);
+    des(:,i) = (dSc2 - dSc1) * P1art(:,i+1) + des(:,i+1); 
+end
 
-% Articulated momenta
-P1Aart = T1A + H*p(1);
-P1Bart = T1B + H*p(2);
-P1Cart = T1C + H*p(3);
-P1Dart = T1D + H*p(4);
-P2Aart = T2A - H*p(2);
+for i = 1 : N
+    dSc1 = getdS2(fi(i), dfi(i), input);
+    Q1art = tree{1,2}(3,ind(i)).';
+    dp(i) = H' * (Q1art-dSc1*P1art(:,i) + des(:,i));
+end
 
-dS = getdS(q, dq, input);
-dSC1_A = dS(1).dSc1;   dSC2_A = dS(1).dSc2;
-dSC1_B = dS(2).dSc1;   dSC2_B = dS(2).dSc2;
-dSC1_C = dS(3).dSc1;   dSC2_C = dS(3).dSc2;
-dSC1_D = dS(4).dSc1;   dSC2_D = dS(4).dSc2;
-
-des3 = H'*(dSC2_C - dSC1_D)*P1Dart;
-des2 = des3 + H'*(dSC2_B - dSC1_C)*P1Cart;
-des1 = des2 + H'*(dSC2_A - dSC1_B)*P1Bart;
-
-dp = zeros(4,1);
-dp(1) = H' * (Q1Aart - dSC1_A * P1Aart) + des1;
-dp(2) = H' * (Q1Bart - dSC1_B * P1Bart) + des2;
-dp(3) = H' * (Q1Cart - dSC1_C * P1Cart) + des3;
-dp(4) = H' * (Q1Dart - dSC1_D * P1Dart);
 
 dY = [dp; dq];
 
 
-function S = calcS(fi, sLoc)
-Om = gpuArray([0, -1; 1, 0]);
-S = gpuArray(eye(3));
-S(3,1:2) = (Om*Rot(fi)*sLoc).';
