@@ -25,7 +25,7 @@ FcsTree = cell(tiers, 1);
 fi = cumsum(q);
 
 branch = cell(tiersInfo(1), 1);
-for i = 1 : N-1
+parfor i = 1 : N-1
     branch{i} = initCoefs(fi(i), p(i), p(i+1), input);
 end
 branch{N} = initCoefs(fi(N), p(N), 0, input);
@@ -33,10 +33,7 @@ AsmTree{1} = branch;
 
 for i = 2 : tiers
     branch = cell(tiersInfo(i), 1);
-    for j = 1 : tiersInfo(i)
-%         % indeksowanie po j: 2*k-1:2*k, gdzie w miejsce k wstawiamy ind(j)
-%                 AsmTree{i} (:, ind(j)) = ...
-%       assembleBlocks(AsmTree{i-1}(:,6*j-5:6*j-3), AsmTree{i-1}(:,6*j-2:6*j));
+    parfor j = 1 : tiersInfo(i)
         branch{j} = assembleBlocks(AsmTree{i-1}{2*j-1}, AsmTree{i-1}{2*j});
     end
     AsmTree{i} = branch;
@@ -57,14 +54,14 @@ FcsTree{tiers} = sourceTier;
 
 for i = tiers : -1 : 2
     branch = cell( max(tiersInfo(i)/2, 1), 1);
-    for j = 1 : tiersInfo(i)
+    parfor j = 1 : tiersInfo(i)
         branch{j} = disassembleBlock(...
 AsmTree{i-1}{2*j-1}, AsmTree{i-1}{2*j}, AsmTree{i}{j}, FcsTree{i}{j});
 %     labBarrier
     end
     
     branchFull = cell(tiersInfo(i-1), 1);
-    for j = 1 : tiersInfo(i-1)
+    parfor j = 1 : tiersInfo(i-1)
         if mod(j,2) == 0
             k = j/2;            id = 2;   else
             k = (j+1)/2;        id = 1;   
@@ -79,7 +76,7 @@ P1art(:,1) = FcsTree{1}{1}(1,:).' + H * p(1);
 [dp, dq] = deal(zeros(N,1));
 dq(1) = H.' * getV(AsmTree{1}{1}, FcsTree{1}{1});
 
-for i = 2 : N
+parfor i = 2 : N
     [~, V1B] = getV(AsmTree{1}{i}, FcsTree{1}{i});
     V2A = getV(AsmTree{1}{i-1}, FcsTree{1}{i-1});
     dq(i) = H.' * (V1B - V2A);
@@ -94,7 +91,7 @@ for i = N-1 : -1 : 1
     des(:,i) = (dSc2 - dSc1) * P1art(:,i+1) + des(:,i+1); 
 end
 
-for i = 1 : N
+parfor i = 1 : N
     dSc1 = getdS2(fi(i), dfi(i), input);
     Q1art = FcsTree{1}{i}(3,:).';
     dp(i) = H' * (Q1art-dSc1*P1art(:,i) + des(:,i));

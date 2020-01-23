@@ -1,6 +1,6 @@
 addpath('inputs','utilities','misc')
 %% nasz main
-Nbodies = 2048;
+Nbodies = 128;
 [tiers, tiersInfo] = getTiers(Nbodies);
 L = 0.04; % [m]
 mass = 0.05;
