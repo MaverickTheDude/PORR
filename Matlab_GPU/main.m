@@ -1,6 +1,6 @@
 addpath('inputs','utilities','misc')
 %% nasz main
-Nbodies = 128;
+Nbodies = 512;
 [tiers, tiersInfo] = getTiers(Nbodies);
 L = 0.04; % [m]
 mass = 0.05;
@@ -15,12 +15,12 @@ inputTMP = struct('Nbodies',Nbodies,'q0',q0,'p0',p0,'dt',dt,'Tk',Tk,...
     'tiers',tiers,'tiersInfo',tiersInfo,'M',M,'sC1_loc',sC1,'sC2_loc',sC2);
 
 T = 0:inputTMP.dt:inputTMP.Tk;
-tic
+% tic
 Ytab = GPU_RK45(inputTMP);
-t = toc
+% t = toc
 pTab = Ytab(1:Nbodies,:);
 qTab = Ytab(Nbodies+1:end,:);
-
+return
 %% compare
 input = FI_HDCA_4links();
 q0 = [0; -pi/4; 0; pi/4]; dq0 = [-1.0; 2; 0; 0.5]; % 4 dof
