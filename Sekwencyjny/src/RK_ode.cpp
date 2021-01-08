@@ -1,6 +1,5 @@
 #include "PORR.h"
 using namespace Eigen;
-extern double* times;
 
 solution RK_solver(inputClass &input) {
 	const double dt = input.getdt();
@@ -19,11 +18,8 @@ solution RK_solver(inputClass &input) {
 	y_m1.head(n) = input.p0();
 	y_m1.tail(n) = input.q0;
 
-	int j = 0;
 //	double t = omp_get_wtime(); //tic
 	for (int i = 1; i < T.size(); i++) {
-		start = clock();
-
 		VectorXd k1 = RHS(T[i-1], y_m1, input);
 		VectorXd tmp = dt/2.0 * k1;
 		VectorXd k2 = RHS(T[i-1] + dt/2.0, y_m1 + dt/2.0*k1, input);
@@ -35,11 +31,6 @@ solution RK_solver(inputClass &input) {
 		pTab.col(i) = y.head(n);
 		qTab.col(i) = y.tail(n);
 		y_m1 = y;
-
-		end = clock();
-		double time_taken = double(end - start) / double(CLOCKS_PER_SEC);
-		times[j] = time_taken;
-		j++;
 	}
 //	t =  omp_get_wtime() - t; //toc
 //	std::cout << "calkowity czas: " << t << std::endl << std::endl;

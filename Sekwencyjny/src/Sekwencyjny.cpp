@@ -6,7 +6,6 @@ using std::cout;
 using std::endl;
 
 IOFormat exportFmt(FullPrecision, 0, " ", "\n", "", "", "", "");
-double* times = nullptr;
 
 int main(int argc, char* argv[]) {
 
@@ -31,25 +30,21 @@ int main(int argc, char* argv[]) {
 
 	// OBLICZENIA
 	inputClass input(Nbodies, q0, v0);
-	times = new double[input.N];
+	// a) Tylko rozwiaz problem - timing oblicza zewnetrzna funkcja
+	solution sol = RK_solver(input);
 
-	double t = omp_get_wtime(); //tic
+	// b) Stare rozwiazanie: timing lokalny
+/*	double t = omp_get_wtime(); //tic
 	solution sol = RK_solver(input);
 	t =  omp_get_wtime() - t; //toc
-	std::cout << "calkowity czas: " << t << std::endl << std::endl;
+	std::cout << "calkowity czas: " << t << std::endl << std::endl;*/
 
-/*	double total_time = 0.0;
-	for (int i = 0; i < input.N; i++) {
-		total_time += times[i];
-		std::cout << "time[" << i << "]: " << times[i] << endl;
-	std::cout << "\n\nTotal time: " << total_time << std::endl;
-	}	*/
 
-	delete [] times;
 	if (sol.stopped) {
 		cout << " PROBLEM!" << endl << sol.error_messege << endl;
 		return 1;
 	}
+	return 0;
 
 	// DRUKOWANIE WYNIKOW
 	std::ofstream outFile;
