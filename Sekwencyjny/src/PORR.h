@@ -44,6 +44,7 @@ public:
 class inputClass {
 	friend class body;
 	// parametry do ustawienia:
+	// note: L, m zredukowane o czynnik 10 przy testach timing'u
 	const double L = 0.04;
 	const double m = 0.05;
 	const double dt = 0.01;

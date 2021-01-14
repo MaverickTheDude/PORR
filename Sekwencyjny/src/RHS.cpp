@@ -210,12 +210,28 @@ VectorXd RHS(const double t, const VectorXd &Y, const inputClass &input) {
 	}
 	datas.set_dS(dq);
 
-	// Momenta calculation
-	MatrixXd des(3,input.Nbodies);
-	des.rightCols(1) << 0, 0, 0;
+	//--- descendants term calculation (reverse cummulative sum) -------
+	MatrixXd des = MatrixXd::Zero(3, input.Nbodies);
+	Vector3d sum;
+	MatrixXd sumThr(3, omp_get_max_threads()+1);
+	sumThr.leftCols(1).setZero();
+
+	// Oblicz cumsum w podprzedzialach i zapisz ostatnia (najwieksza) wartosc w tablicy sumThr
+# pragma omp parallel for schedule(static) private(sum)
 	for (int i = input.Nbodies - 2; i >= 0; i--) {
-		des.col(i) =  (datas.tab[i].dSc2() - datas.tab[i+1].dSc1()) * P1art.col(i+1)
-					  + des.col(i+1);
+		sum += (datas.tab[i].dSc2() - datas.tab[i+1].dSc1()) * P1art.col(i+1);
+		des.col(i) = sum;
+		sumThr.col(omp_get_thread_num()+1) = sum;
+	}
+
+	// Oblicz poprawke dla poszczegolnych przedzialow. Tylko Nthr (lub Nthr-1) cykli
+	for (int i=1; i < omp_get_max_threads(); i++)
+		sumThr.col(i) += sumThr.col(i-1);
+
+	// Zastosuj poprawke
+# pragma omp parallel for schedule(static)
+	for (int i = input.Nbodies - 2; i >= 0; i--) {
+		des.col(i) += sumThr.col(omp_get_thread_num());
 	}
 
 #pragma omp parallel for schedule(static)
@@ -258,11 +274,11 @@ bool ksi_coef::check_if_ok() const {
 	return true;
 }
 
-ksi_coef::ksi_coef() {/*Note: trzeba zdefiniowac, mimo ze jest 100% defaultowy*/}
+ksi_coef::ksi_coef() { }
 
-Assembly::Assembly() { }
+Assembly::Assembly() : AssA(nullptr), AssB(nullptr) { }
 
-acc_force::acc_force() { }
+acc_force::acc_force() : AssA(nullptr), AssB(nullptr) { }
 
 ksi_coef::ksi_coef(const ksi_coef &_ksi) {
 	i11 = _ksi.i11;
