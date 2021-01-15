@@ -57,11 +57,13 @@ VectorXd RHS(const double t, const VectorXd &Y, const inputClass &input) {
 	std::vector< std::vector<acc_force> > Q_tree;
 	tree.reserve(tiers);
 	Q_tree.reserve(tiers);
+	tree.resize(tiers);
+	Q_tree.resize(tiers);
 
 	//--- Pierwsza galaz drzewa binarnego -----------------------------------------
 
-	std::vector<Assembly> base_assembly;
-	std::vector<acc_force> base_Qacc;
+	std::vector<Assembly> & base_assembly =   tree[0];
+	std::vector<acc_force>& base_Qacc     = Q_tree[0];
 	base_assembly.reserve(input.Nbodies);
 	base_Qacc.reserve(input.Nbodies);
 
@@ -96,19 +98,16 @@ VectorXd RHS(const double t, const VectorXd &Y, const inputClass &input) {
 		base_Qacc.resize(base_Qacc.size() + prefix[nthreads]);
 	}
 	std::copy(base_assembly_p.begin(), base_assembly_p.end(), base_assembly.begin() + prefix[ithread]);
-	std::copy(base_Qacc_p.begin(), base_Qacc_p.end(), base_Qacc.begin() + prefix[ithread]);
+	std::copy(base_Qacc_p.begin(),     base_Qacc_p.end(),         base_Qacc.begin() + prefix[ithread]);
 }
 	delete [] prefix;
-	tree.push_back(std::move(base_assembly));
-	Q_tree.push_back(std::move(base_Qacc));
-//	tree.push_back(base_assembly);
-//	Q_tree.push_back(base_Qacc);
+
 
 	//--- Rekursja od lisci do korzenia -----------------------------------------
 
 	for (unsigned int i = 1; i < tiers; i++) {
-		std::vector<Assembly> 	 branch;
-		std::vector<acc_force> Q_branch;
+		std::vector<Assembly> & branch   =   tree[i];
+		std::vector<acc_force>& Q_branch = Q_tree[i];
 		branch.reserve(input.tiers_info[i]);
 		Q_branch.reserve(input.tiers_info[i]);
 		const int end_of_branch = input.tiers_info[i-1] - 1;
@@ -139,18 +138,12 @@ VectorXd RHS(const double t, const VectorXd &Y, const inputClass &input) {
 	    {
 	        for(int i=1; i<(nthreads+1); i++)
 				prefix[i] += prefix[i-1];
-// To do boost performance (jak zrobic, zeby zadzialalo?)
-//	        tree[i].resize(branch_p.size() + prefix[nthreads]);
-//	        Q_tree[i].resize(Q_branch_p.size() + prefix[nthreads]);
-
-	        branch.resize(branch_p.size() + prefix[nthreads]);
-	        Q_branch.resize(Q_branch_p.size() + prefix[nthreads]);
+	        branch.resize(branch.size() + prefix[nthreads]);
+	        Q_branch.resize(Q_branch.size() + prefix[nthreads]);
 	    }
 
-	    std::copy(branch_p.begin(), branch_p.end(), branch.begin() + prefix[ithread]);
+	    std::copy(  branch_p.begin(),   branch_p.end(),   branch.begin() + prefix[ithread]);
 	    std::copy(Q_branch_p.begin(), Q_branch_p.end(), Q_branch.begin() + prefix[ithread]);
-//	    std::copy(branch_p.begin(), branch_p.end(), tree[i].begin() + prefix[ithread]);
-//	    std::copy(Q_branch_p.begin(), Q_branch_p.end(), Q_tree[i].begin() + prefix[ithread]);
 }
 		delete [] prefix;
 
@@ -158,14 +151,7 @@ VectorXd RHS(const double t, const VectorXd &Y, const inputClass &input) {
 		if (input.tiers_info[i-1] % 2 == 1) {
 			branch.emplace_back(tree[i-1].back());
 			Q_branch.emplace_back(Q_tree[i-1].back());
-//			std::cout << "galaz powyzej zawiera nieparzysta liczbe elementow. i = " << i << endl << endl;
 		}
-		// Czy mozemy skopiowac zawartosc branch bezposrednio do tego kontenera?
-		// std::move nie ma wplywu na czas wykonania programu, natomiast kopiowanie do tree daje segfaulta
-		tree.push_back(std::move(branch));
-		Q_tree.push_back(std::move(Q_branch));
-//		tree.push_back(branch);
-//		Q_tree.push_back(Q_branch);
 	}
 
 	//--- Base body connection -----------------------------------------
